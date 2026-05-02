@@ -158,6 +158,10 @@ impl ProofWitnessEscrow {
             panic!("verification already exists");
         }
 
+        if Self::claim_has_verifier(&claim, &verifier) {
+            panic!("verifier already submitted for claim");
+        }
+
         // Validate decision
         let dec_true = Symbol::new(&env, "true");
         let dec_false = Symbol::new(&env, "false");
@@ -316,6 +320,22 @@ impl ProofWitnessEscrow {
             .instance()
             .get(&KEY_XLM)
             .unwrap_or_else(|| panic!("xlm token not set"))
+    }
+
+    fn vec_has_address(items: &Vec<Address>, address: &Address) -> bool {
+        for i in 0..items.len() {
+            let item = items.get(i).unwrap();
+            if item == address.clone() {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn claim_has_verifier(claim: &ClaimData, verifier: &Address) -> bool {
+        Self::vec_has_address(&claim.verifiers_true, verifier)
+            || Self::vec_has_address(&claim.verifiers_false, verifier)
+            || Self::vec_has_address(&claim.verifiers_unsure, verifier)
     }
 }
 

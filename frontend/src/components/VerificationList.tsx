@@ -1,19 +1,19 @@
 import { useState } from "react";
 import {
+  Award,
   CheckCircle2,
-  XCircle,
-  HelpCircle,
-  ExternalLink,
-  Hash,
-  User,
   Clock,
   Coins,
-  Award,
+  ExternalLink,
+  Hash,
+  HelpCircle,
+  User,
+  XCircle,
 } from "lucide-react";
-import { shortAddress } from "../lib/wallet";
 import { shortHash } from "../lib/hash";
 import { getBadge, isAnonymous } from "../lib/reputation";
-import type { Verification, CreditLedger } from "../types";
+import { shortAddress } from "../lib/wallet";
+import type { CreditLedger, Verification } from "../types";
 
 type Props = {
   verifications: Verification[];
@@ -21,141 +21,143 @@ type Props = {
 };
 
 function DecisionBadge({ decision }: { decision: string }) {
-  switch (decision) {
-    case "true":
-      return (
-        <span className="badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-          <CheckCircle2 className="w-3 h-3" /> Doğru
-        </span>
-      );
-    case "false":
-      return (
-        <span className="badge bg-red-500/15 text-red-400 border border-red-500/30">
-          <XCircle className="w-3 h-3" /> Yanlış
-        </span>
-      );
-    default:
-      return (
-        <span className="badge bg-amber-500/15 text-amber-400 border border-amber-500/30">
-          <HelpCircle className="w-3 h-3" /> Emin değilim
-        </span>
-      );
+  if (decision === "true") {
+    return (
+      <span className="badge border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        Doğru
+      </span>
+    );
   }
+
+  if (decision === "false") {
+    return (
+      <span className="badge border border-red-400/25 bg-red-500/10 text-red-200">
+        <XCircle className="h-3.5 w-3.5" />
+        Yanlış
+      </span>
+    );
+  }
+
+  return (
+    <span className="badge border border-amber-400/25 bg-amber-500/10 text-amber-200">
+      <HelpCircle className="h-3.5 w-3.5" />
+      Emin değilim
+    </span>
+  );
 }
 
 export default function VerificationList({ verifications, creditLedger }: Props) {
   if (verifications.length === 0) {
     return (
-      <p className="text-xs text-gray-500 italic mt-3">
+      <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/30 p-4 text-sm text-slate-500">
         Henüz doğrulama yok. Bölgedeki kişiler kanıt ekleyerek doğrulama yapabilir.
-      </p>
+      </div>
     );
   }
 
   return (
-    <div className="mt-4 space-y-3">
-      <h4 className="text-sm font-semibold text-gray-300">
-        Doğrulamalar ({verifications.length})
-      </h4>
-      {verifications.map((v) => (
-        <VerificationCard key={v.id} verification={v} creditLedger={creditLedger} />
-      ))}
+    <div className="space-y-4">
+      <h4 className="text-sm font-bold text-slate-100">Doğrulamalar ({verifications.length})</h4>
+      <div className="relative space-y-4 pl-4 before:absolute before:left-1.5 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-slate-700">
+        {verifications.map((verification) => (
+          <VerificationCard key={verification.id} verification={verification} creditLedger={creditLedger} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function VerificationCard({ verification: v, creditLedger }: { verification: Verification; creditLedger: CreditLedger }) {
+function VerificationCard({
+  verification,
+  creditLedger,
+}: {
+  verification: Verification;
+  creditLedger: CreditLedger;
+}) {
   const [imgError, setImgError] = useState(false);
-  const verifierBadge = getBadge(v.verifierWallet, creditLedger);
-  const anon = isAnonymous(v.verifierWallet);
-
+  const verifierBadge = getBadge(verification.verifierWallet, creditLedger);
+  const anon = isAnonymous(verification.verifierWallet);
   const isImage =
-    v.evidenceUrl &&
-    (v.evidenceUrl.match(/\.(png|jpe?g|webp)$/i) ||
-      v.evidenceUrl.includes("/uploads/"));
+    verification.evidenceUrl &&
+    (verification.evidenceUrl.match(/\.(png|jpe?g|webp)$/i) || verification.evidenceUrl.includes("/uploads/"));
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3 space-y-2 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <DecisionBadge decision={v.decision} />
-        <div className="flex items-center gap-3 text-[11px] text-gray-500">
-          <span className="flex items-center gap-1">
-            <User className="w-3 h-3" />
-            {shortAddress(v.verifierWallet)}
+    <article className="relative rounded-2xl border border-slate-800 bg-slate-950/35 p-4">
+      <span className="absolute -left-[1.07rem] top-5 h-3 w-3 rounded-full border border-indigo-300/50 bg-indigo-500 shadow-lg shadow-indigo-500/30" />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <DecisionBadge decision={verification.decision} />
+        <div className="flex flex-wrap gap-2 text-xs text-slate-500 sm:justify-end">
+          <span className="inline-flex items-center gap-1">
+            <User className="h-3.5 w-3.5" />
+            {shortAddress(verification.verifierWallet)}
           </span>
-          <span className={`inline-flex items-center gap-1 text-[10px] font-medium border rounded-full px-2 py-0.5 ${verifierBadge.bg} ${verifierBadge.color}`}>
+          <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${verifierBadge.bg} ${verifierBadge.color}`}>
             {verifierBadge.label}
           </span>
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {new Date(v.createdAt).toLocaleString()}
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            {new Date(verification.createdAt).toLocaleString("tr-TR")}
           </span>
         </div>
       </div>
 
-      {anon && (
-        <p className="text-[10px] text-gray-600 italic">Anonim doğrulamalarda itibar kalıcı değildir.</p>
-      )}
+      {anon && <p className="mt-2 text-xs text-slate-600">Anonim doğrulamalarda itibar kalıcı değildir.</p>}
 
-      <p className="text-sm text-gray-300">{v.note}</p>
+      <p className="mt-3 text-sm leading-relaxed text-slate-300">{verification.note}</p>
 
-      {/* Stake bilgisi */}
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
-        <span className="flex items-center gap-1">
-          <Coins className="w-3 h-3 text-indigo-400" />
-          Stake: {v.stakeAmount} XLM
-        </span>
-        {v.stakeTxHash && (
-          <a
-            href={`https://stellar.expert/explorer/testnet/tx/${v.stakeTxHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            <ExternalLink className="w-3 h-3" />
-            TX: {shortHash(v.stakeTxHash)}
-          </a>
-        )}
-        {v.rewardCredits > 0 ? (
-          <span className="flex items-center gap-1 text-emerald-400">
-            <Award className="w-3 h-3" />
-            Kazanılan itibar: +{v.rewardCredits}
-          </span>
-        ) : (
-          <span className="text-gray-600">İtibar bekliyor</span>
-        )}
-      </div>
-
-      {/* Evidence image */}
-      {v.evidenceUrl && isImage && !imgError && (
+      {verification.evidenceUrl && isImage && !imgError && (
         <img
-          src={v.evidenceUrl}
+          src={verification.evidenceUrl}
           alt="Kanıt"
-          className="w-full max-h-48 object-cover rounded-lg border border-[var(--color-border)]"
+          className="mt-3 max-h-56 w-full rounded-xl border border-slate-800 object-cover"
           onError={() => setImgError(true)}
         />
       )}
 
-      {/* Evidence link */}
-      {v.evidenceUrl && (
-        <a
-          href={v.evidenceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-        >
-          <ExternalLink className="w-3 h-3" />
-          Kanıtı aç
-        </a>
-      )}
-
-      {/* Hash */}
-      {v.verificationHash && (
-        <div className="flex items-center gap-1 text-[10px] text-gray-600">
-          <Hash className="w-3 h-3" />
-          {shortHash(v.verificationHash)}
-        </div>
-      )}
-    </div>
+      <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-1">
+          <Coins className="h-3.5 w-3.5 text-indigo-300" />
+          Stake: {verification.stakeAmount} XLM
+        </span>
+        {verification.stakeTxHash && (
+          <a
+            href={`https://stellar.expert/explorer/testnet/tx/${verification.stakeTxHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-indigo-300 transition hover:text-indigo-100"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            TX: {shortHash(verification.stakeTxHash)}
+          </a>
+        )}
+        {verification.rewardCredits > 0 ? (
+          <span className="inline-flex items-center gap-1 text-emerald-300">
+            <Award className="h-3.5 w-3.5" />
+            Kazanılan itibar: +{verification.rewardCredits}
+          </span>
+        ) : (
+          <span className="text-slate-600">İtibar bekliyor</span>
+        )}
+        {verification.verificationHash && (
+          <span className="inline-flex items-center gap-1 font-mono text-slate-600">
+            <Hash className="h-3.5 w-3.5" />
+            {shortHash(verification.verificationHash)}
+          </span>
+        )}
+        {verification.evidenceUrl && (
+          <a
+            href={verification.evidenceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-cyan-300 transition hover:text-cyan-100"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Kanıtı aç
+          </a>
+        )}
+      </div>
+    </article>
   );
 }

@@ -1,4 +1,4 @@
-import type { RiskLevel, ClaimStatus } from "../types";
+import type { ClaimStatus, RiskLevel } from "../types";
 
 export const riskLabels: Record<RiskLevel, string> = {
   Low: "Düşük",

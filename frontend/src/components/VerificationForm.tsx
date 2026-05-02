@@ -1,50 +1,57 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
+  AlertTriangle,
   CheckCircle2,
-  XCircle,
+  Coins,
   HelpCircle,
+  Link2,
   Loader2,
   Upload,
-  Link2,
-  AlertTriangle,
-  Coins,
+  XCircle,
 } from "lucide-react";
 import { uploadEvidence } from "../lib/api";
 import { buildVerificationHash } from "../lib/hash";
-import { stakeXlmWithFreighter, getTreasuryAddress } from "../lib/stellarStake";
 import {
+  getSorobanConfigError,
   getStakeMode,
   isSorobanReady,
-  getSorobanConfigError,
   sorobanAddVerificationWithStake,
 } from "../lib/sorobanEscrow";
+import { getTreasuryAddress, stakeXlmWithFreighter } from "../lib/stellarStake";
 import type { Verification, VerificationDecision } from "../types";
 
 type Props = {
   claimId: string;
   walletAddress: string;
   walletConnected: boolean;
+  existingVerifications: Verification[];
   onVerificationAdded: (claimId: string, verification: Verification) => void;
 };
 
-const DECISIONS: { value: VerificationDecision; label: string; icon: React.ReactNode; color: string }[] = [
+const DECISIONS: {
+  value: VerificationDecision;
+  label: string;
+  icon: ReactNode;
+  activeClass: string;
+}[] = [
   {
     value: "true",
     label: "Doğru",
-    icon: <CheckCircle2 className="w-4 h-4" />,
-    color: "border-emerald-500/50 bg-emerald-500/10 text-emerald-300",
+    icon: <CheckCircle2 className="h-4 w-4" />,
+    activeClass: "border-emerald-400/50 bg-emerald-500/15 text-emerald-100",
   },
   {
     value: "false",
     label: "Yanlış",
-    icon: <XCircle className="w-4 h-4" />,
-    color: "border-red-500/50 bg-red-500/10 text-red-300",
+    icon: <XCircle className="h-4 w-4" />,
+    activeClass: "border-red-400/50 bg-red-500/15 text-red-100",
   },
   {
     value: "unsure",
     label: "Emin değilim / Ek kanıt",
-    icon: <HelpCircle className="w-4 h-4" />,
-    color: "border-amber-500/50 bg-amber-500/10 text-amber-300",
+    icon: <HelpCircle className="h-4 w-4" />,
+    activeClass: "border-amber-400/50 bg-amber-500/15 text-amber-100",
   },
 ];
 
@@ -54,6 +61,7 @@ export default function VerificationForm({
   claimId,
   walletAddress,
   walletConnected,
+  existingVerifications,
   onVerificationAdded,
 }: Props) {
   const [decision, setDecision] = useState<VerificationDecision>("unsure");
@@ -66,6 +74,7 @@ export default function VerificationForm({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const stakeMode = getStakeMode();
+  const modeLabel = stakeMode === "soroban" ? "Soroban Escrow" : "Treasury Demo";
 
   const resetForm = () => {
     setDecision("unsure");
@@ -81,17 +90,25 @@ export default function VerificationForm({
     e.preventDefault();
     setError("");
 
-    if (!note.trim()) {
-      setError("Açıklama zorunludur.");
-      return;
-    }
-
     if (!walletConnected) {
       setError("XLM stake için önce Freighter cüzdanınızı bağlamalısınız.");
       return;
     }
 
-    // ─── Mode-specific validation ───
+    const alreadyVerified = existingVerifications.some(
+      (verification) =>
+        verification.verifierWallet.toLowerCase() === walletAddress.toLowerCase()
+    );
+    if (alreadyVerified) {
+      setError("Bu cüzdan bu bildirimi zaten doğruladı.");
+      return;
+    }
+
+    if (!note.trim()) {
+      setError("Açıklama zorunludur.");
+      return;
+    }
+
     if (stakeMode === "soroban") {
       if (!isSorobanReady()) {
         const configErr = getSorobanConfigError();
@@ -109,7 +126,6 @@ export default function VerificationForm({
     setLoading(true);
 
     try {
-      // 1. Upload file if selected
       let evidenceUrl: string | undefined;
       if (file) {
         setLoadingMsg("Kanıt yükleniyor...");
@@ -119,11 +135,9 @@ export default function VerificationForm({
         evidenceUrl = evidenceUrlInput.trim();
       }
 
-      // 2. Build hash
       const createdAt = new Date().toISOString();
       const verifierWallet = walletAddress;
       const verificationId = crypto.randomUUID();
-
       const verificationHash = await buildVerificationHash({
         claimId,
         verifierWallet,
@@ -133,11 +147,10 @@ export default function VerificationForm({
         createdAt,
       });
 
-      // 3. Stake (mode-dependent)
       let stakeTxHash = "";
+      setLoadingMsg("XLM stake işlemi bekleniyor...");
 
       if (stakeMode === "soroban") {
-        setLoadingMsg("Soroban escrow stake işlemi bekleniyor...");
         try {
           const result = await sorobanAddVerificationWithStake(
             walletAddress,
@@ -156,7 +169,6 @@ export default function VerificationForm({
           throw new Error(`Soroban escrow hatası: ${msg}`, { cause: err });
         }
       } else {
-        setLoadingMsg("XLM stake işlemi bekleniyor...");
         const treasury = getTreasuryAddress();
         const stakeResult = await stakeXlmWithFreighter({
           sourcePublicKey: walletAddress,
@@ -168,8 +180,11 @@ export default function VerificationForm({
         if (!stakeResult.successful) {
           throw new Error("Stake transaction başarısız oldu.");
         }
+
         stakeTxHash = stakeResult.hash;
       }
+
+      setLoadingMsg("Doğrulama ekleniyor...");
 
       const verification: Verification = {
         id: verificationId,
@@ -195,55 +210,53 @@ export default function VerificationForm({
     }
   };
 
-  const modeLabel = stakeMode === "soroban" ? "Soroban Escrow" : "Treasury Demo";
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 mt-4 pt-4 border-t border-[var(--color-border)]">
-      <h4 className="text-sm font-semibold text-gray-300">Doğrulama Ekle</h4>
-
-      {/* Stake bilgisi */}
-      <div className="flex items-center gap-2 bg-indigo-500/8 border border-indigo-500/20 rounded-lg p-2">
-        <Coins className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-        <p className="text-[10px] text-indigo-300">
-          Doğrulama eklemek için <span className="font-semibold">{VERIFY_STAKE_AMOUNT} testnet XLM</span> stake edilir.
-          <span className="ml-1 text-indigo-400/70">({modeLabel})</span>
-        </p>
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h4 className="text-sm font-bold text-slate-100">Doğrulama Ekle</h4>
+          <p className="mt-1 text-xs text-slate-500">Kararınızı not ve opsiyonel kanıtla destekleyin.</p>
+        </div>
+        <span className="badge border border-indigo-400/25 bg-indigo-500/10 text-indigo-200">
+          <Coins className="h-3.5 w-3.5" />
+          {VERIFY_STAKE_AMOUNT} XLM · {modeLabel}
+        </span>
       </div>
 
-      {/* Decision buttons */}
-      <div className="flex flex-wrap gap-2">
-        {DECISIONS.map((d) => (
+      <div className="grid gap-2 sm:grid-cols-3">
+        {DECISIONS.map((item) => (
           <button
-            key={d.value}
+            key={item.value}
             type="button"
-            onClick={() => setDecision(d.value)}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition-all duration-200 cursor-pointer ${
-              decision === d.value
-                ? d.color
-                : "border-[var(--color-border)] bg-transparent text-gray-400 hover:border-gray-500"
+            onClick={() => setDecision(item.value)}
+            disabled={loading}
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition ${
+              decision === item.value
+                ? item.activeClass
+                : "border-slate-700 bg-slate-900/70 text-slate-400 hover:border-slate-500 hover:text-slate-200"
             }`}
           >
-            {d.icon}
-            {d.label}
+            {item.icon}
+            {item.label}
           </button>
         ))}
       </div>
 
-      {/* Note */}
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Gözleminizi veya bilginizi yazın"
-        rows={2}
-        className="input-field resize-none text-sm"
+        rows={4}
+        className="input-field mt-3 resize-none"
         disabled={loading}
       />
 
-      {/* Evidence photo */}
-      <div className="flex items-center gap-2">
-        <label className="btn-secondary flex items-center gap-1.5 text-xs cursor-pointer">
-          <Upload className="w-3.5 h-3.5" />
-          {file ? file.name : "Kanıt fotoğrafı, opsiyonel"}
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700/70 bg-slate-900/70 px-3.5 py-3 text-sm text-slate-300 transition hover:border-indigo-400/50">
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <Upload className="h-4 w-4 shrink-0 text-indigo-300" />
+            <span className="truncate">{file ? file.name : "Kanıt fotoğrafı, opsiyonel"}</span>
+          </span>
           <input
             ref={fileRef}
             type="file"
@@ -253,42 +266,35 @@ export default function VerificationForm({
             disabled={loading}
           />
         </label>
+
+        <div className="relative">
+          <Link2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <input
+            type="url"
+            value={evidenceUrlInput}
+            onChange={(e) => setEvidenceUrlInput(e.target.value)}
+            placeholder="Kanıt URL'si, opsiyonel"
+            className="input-field pl-10"
+            disabled={loading}
+          />
+        </div>
       </div>
 
-      {/* Evidence URL */}
-      <div className="flex items-center gap-2">
-        <Link2 className="w-4 h-4 text-gray-500 shrink-0" />
-        <input
-          type="url"
-          value={evidenceUrlInput}
-          onChange={(e) => setEvidenceUrlInput(e.target.value)}
-          placeholder="Varsa kanıt bağlantısı ekleyin"
-          className="input-field text-sm py-2"
-          disabled={loading}
-        />
-      </div>
-
-      {/* Error */}
       {error && (
-        <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-2.5">
-          <AlertTriangle className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
-          <p className="text-xs text-red-300">{error}</p>
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-500/10 p-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />
+          <p className="text-sm text-red-100">{error}</p>
         </div>
       )}
 
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="btn-primary w-full text-sm flex items-center justify-center gap-2 py-2"
-      >
+      <button type="submit" disabled={loading} className="btn-primary mt-4 w-full">
         {loading ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            {loadingMsg}
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {loadingMsg || "Doğrulama ekleniyor..."}
           </>
         ) : (
-          "Doğrulamayı Gönder"
+          "0.1 testnet XLM stake ile doğrulamayı gönder"
         )}
       </button>
     </form>

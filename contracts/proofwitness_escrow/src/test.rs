@@ -127,6 +127,50 @@ fn test_add_verification_increments_counts() {
 }
 
 #[test]
+#[should_panic(expected = "verifier already submitted for claim")]
+fn test_same_verifier_cannot_verify_claim_twice() {
+    let (env, _, client, _, _, _, xlm_sac) = setup_env();
+
+    let creator = Address::generate(&env);
+    fund_account(&xlm_sac, &creator, 10_000_000);
+
+    let claim_id = make_string(&env, "claim-duplicate-verifier");
+    client.create_claim_with_stake(
+        &creator,
+        &claim_id,
+        &make_string(&env, "h"),
+        &make_string(&env, "a"),
+        &1000u64,
+    );
+
+    let verifier = Address::generate(&env);
+    fund_account(&xlm_sac, &verifier, 5_000_000);
+
+    let dec_true = Symbol::new(&env, "true");
+    let dec_false = Symbol::new(&env, "false");
+
+    client.add_verification_with_stake(
+        &verifier,
+        &claim_id,
+        &make_string(&env, "dup-v-1"),
+        &dec_true,
+        &make_string(&env, "vh1"),
+        &make_string(&env, "eh1"),
+        &2000u64,
+    );
+
+    client.add_verification_with_stake(
+        &verifier,
+        &claim_id,
+        &make_string(&env, "dup-v-2"),
+        &dec_false,
+        &make_string(&env, "vh2"),
+        &make_string(&env, "eh2"),
+        &2001u64,
+    );
+}
+
+#[test]
 fn test_three_true_makes_verified() {
     let (env, _, client, _, _, _, xlm_sac) = setup_env();
 
