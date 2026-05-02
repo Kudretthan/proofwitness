@@ -23,8 +23,10 @@ const NETWORK_PASSPHRASE = StellarSdk.Networks.TESTNET;
 export type StakeMode = "treasury" | "soroban";
 
 export function getStakeMode(): StakeMode {
-  const mode = import.meta.env.VITE_STAKE_MODE || "treasury";
-  return mode === "soroban" ? "soroban" : "treasury";
+  const mode = (import.meta.env.VITE_STAKE_MODE || "").trim().toLowerCase();
+  if (mode === "soroban") return "soroban";
+  if (mode === "treasury") return "treasury";
+  throw new Error(`VITE_STAKE_MODE hatalı veya eksik. "${mode}" bulundu. Sadece "soroban" veya "treasury" olmalıdır.`);
 }
 
 export function isSorobanReady(): boolean {

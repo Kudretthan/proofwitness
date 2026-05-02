@@ -329,7 +329,7 @@ export default function ClaimCard({
                       ? "Stake iadesi tamamlandı."
                       : isResolved
                         ? "Çözüldü, payout bekliyor."
-                        : "Escrow stake kilidi aktif."
+                        : "Soroban escrow ile stake kilitlendi."
                     : "Treasury fallback ile stake alındı."}
                 </p>
               </div>
@@ -426,7 +426,7 @@ export default function ClaimCard({
 
         {mode === "full" ? (
           <>
-            <VerificationList verifications={claim.verifications} creditLedger={creditLedger} />
+            <VerificationList verifications={claim.verifications} creditLedger={creditLedger} stakeMode={claim.stakeMode} />
 
             <VerificationForm
               claimId={claim.id}
@@ -442,7 +442,7 @@ export default function ClaimCard({
               Doğrulama Detaylarını Göster
             </summary>
             <div className="mt-4 space-y-5">
-              <VerificationList verifications={claim.verifications} creditLedger={creditLedger} />
+              <VerificationList verifications={claim.verifications} creditLedger={creditLedger} stakeMode={claim.stakeMode} />
             </div>
           </details>
         )}

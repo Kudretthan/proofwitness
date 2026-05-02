@@ -166,7 +166,7 @@ export default function VerificationForm({
           stakeTxHash = result.txHash;
         } catch (err: unknown) {
           console.error("Soroban escrow failed:", err);
-          throw new Error("Soroban escrow işlemi başarısız oldu. Lütfen Freighter Testnet, contract env ve RPC ayarlarını kontrol edin.");
+          throw new Error("Soroban escrow işlemi başarısız oldu. Treasury fallback devre dışı.");
         }
       } else {
         const treasury = getTreasuryAddress();

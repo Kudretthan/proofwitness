@@ -18,6 +18,7 @@ import type { CreditLedger, Verification } from "../types";
 type Props = {
   verifications: Verification[];
   creditLedger: CreditLedger;
+  stakeMode?: "soroban" | "treasury";
 };
 
 function DecisionBadge({ decision }: { decision: string }) {
@@ -47,7 +48,7 @@ function DecisionBadge({ decision }: { decision: string }) {
   );
 }
 
-export default function VerificationList({ verifications, creditLedger }: Props) {
+export default function VerificationList({ verifications, creditLedger, stakeMode }: Props) {
   if (verifications.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/30 p-4 text-sm text-slate-500">
@@ -61,7 +62,7 @@ export default function VerificationList({ verifications, creditLedger }: Props)
       <h4 className="text-sm font-bold text-slate-100">Doğrulamalar ({verifications.length})</h4>
       <div className="relative space-y-4 pl-4 before:absolute before:left-1.5 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-slate-700">
         {verifications.map((verification) => (
-          <VerificationCard key={verification.id} verification={verification} creditLedger={creditLedger} />
+          <VerificationCard key={verification.id} verification={verification} creditLedger={creditLedger} stakeMode={stakeMode} />
         ))}
       </div>
     </div>
@@ -71,9 +72,11 @@ export default function VerificationList({ verifications, creditLedger }: Props)
 function VerificationCard({
   verification,
   creditLedger,
+  stakeMode,
 }: {
   verification: Verification;
   creditLedger: CreditLedger;
+  stakeMode?: "soroban" | "treasury";
 }) {
   const [imgError, setImgError] = useState(false);
   const verifierBadge = getBadge(verification.verifierWallet, creditLedger);
@@ -121,6 +124,11 @@ function VerificationCard({
           <Coins className="h-3.5 w-3.5 text-indigo-300" />
           Stake: {verification.stakeAmount} XLM
         </span>
+        {stakeMode === "soroban" && (
+          <span className="inline-flex items-center gap-1 text-violet-300">
+            Soroban escrow ile doğrulama stake'i kilitlendi.
+          </span>
+        )}
         {verification.stakeTxHash && (
           <a
             href={`https://stellar.expert/explorer/testnet/tx/${verification.stakeTxHash}`}
