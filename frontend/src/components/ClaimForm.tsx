@@ -123,8 +123,8 @@ export default function ClaimForm({ walletAddress, walletConnected, onClaimCreat
           }
           stakeTxHash = result.txHash;
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Soroban escrow hatası";
-          throw new Error(`Soroban escrow hatası: ${msg}`, { cause: err });
+          console.error("Soroban escrow failed:", err);
+          throw new Error("Soroban escrow işlemi başarısız oldu. Lütfen Freighter Testnet, contract env ve RPC ayarlarını kontrol edin.");
         }
       } else {
         const treasury = getTreasuryAddress();

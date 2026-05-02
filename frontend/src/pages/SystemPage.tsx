@@ -23,20 +23,30 @@ export default function SystemPage({ stakeMode, sorobanConfigErr, onClearData, s
         <h2 className="mb-4 text-xl font-bold text-slate-100">Teknik Bilgiler</h2>
         <div className="space-y-3 text-sm">
           <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-slate-400">Stake Modu</span>
-            <span className="font-bold text-slate-100">{stakeMode === "soroban" ? "Soroban Escrow" : "Treasury Demo"}</span>
+            <span className="text-slate-400">Stake Modu (VITE_STAKE_MODE)</span>
+            <span className="font-bold text-slate-100">{import.meta.env.VITE_STAKE_MODE || "Belirtilmemiş (Varsayılan: treasury)"}</span>
           </div>
           <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-slate-400">Ağ</span>
-            <span className="font-bold text-slate-100">Testnet</span>
+            <span className="text-slate-400">Ağ (VITE_STELLAR_NETWORK)</span>
+            <span className="font-bold text-slate-100">{import.meta.env.VITE_STELLAR_NETWORK || "Belirtilmemiş"}</span>
           </div>
           <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-slate-400">Soroban Escrow Contract ID</span>
-            <span className="font-mono text-xs font-bold text-slate-100">{import.meta.env.VITE_SOROBAN_ESCROW_CONTRACT_ID || "Belirtilmemiş"}</span>
+            <span className="text-slate-400">VITE_SOROBAN_ESCROW_CONTRACT_ID tanımlı mı?</span>
+            <span className={import.meta.env.VITE_SOROBAN_ESCROW_CONTRACT_ID ? "font-bold text-emerald-400" : "font-bold text-red-400"}>
+              {import.meta.env.VITE_SOROBAN_ESCROW_CONTRACT_ID ? "Evet" : "Hayır"}
+            </span>
           </div>
           <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-slate-400">Native XLM Token Contract ID</span>
-            <span className="font-mono text-xs font-bold text-slate-100">{import.meta.env.VITE_NATIVE_ASSET_CONTRACT_ID || "Belirtilmemiş"}</span>
+            <span className="text-slate-400">VITE_XLM_TOKEN_CONTRACT_ID tanımlı mı?</span>
+            <span className={import.meta.env.VITE_XLM_TOKEN_CONTRACT_ID ? "font-bold text-emerald-400" : "font-bold text-red-400"}>
+              {import.meta.env.VITE_XLM_TOKEN_CONTRACT_ID ? "Evet" : "Hayır"}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-slate-400">VITE_STELLAR_RPC_URL tanımlı mı?</span>
+            <span className={import.meta.env.VITE_STELLAR_RPC_URL ? "font-bold text-emerald-400" : "font-bold text-red-400"}>
+              {import.meta.env.VITE_STELLAR_RPC_URL ? "Evet" : "Hayır"}
+            </span>
           </div>
           <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-slate-400">Treasury Fallback Address</span>
@@ -55,6 +65,16 @@ export default function SystemPage({ stakeMode, sorobanConfigErr, onClearData, s
             </SystemNotice>
           </div>
         )}
+        {stakeMode === "soroban" &&
+          (!import.meta.env.VITE_SOROBAN_ESCROW_CONTRACT_ID ||
+            !import.meta.env.VITE_XLM_TOKEN_CONTRACT_ID ||
+            !import.meta.env.VITE_STELLAR_RPC_URL) && (
+            <div className="mt-4">
+              <SystemNotice title="Eksik Çevre Değişkenleri" tone="red">
+                Soroban Escrow modunun çalışabilmesi için ilgili tüm değişkenlerin (.env) tanımlanmış olması zorunludur.
+              </SystemNotice>
+            </div>
+          )}
       </section>
 
       <section className="section-card p-6">
