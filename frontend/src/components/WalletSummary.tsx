@@ -123,9 +123,9 @@ export default function WalletSummary({
               <div className="flex gap-3">
                 <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-400 mt-0.5" />
                 <div className="text-sm text-red-100">
-                  <p className="font-semibold mb-1">{getWalletErrorMessage(walletError)}</p>
+                  <p className="font-semibold mb-2">{getWalletErrorMessage(walletError)}</p>
                   <p className="text-xs text-red-200/80">
-                    Freighter'ı açın, Testnet seçin, proofwitness.vercel.app için site izni verin ve sayfayı yenileyin.
+                    💡 Bağlantı olmazsa: Freighter'ı açın, Testnet seçin, proofwitness.vercel.app için site izni verin ve sayfayı yenileyin.
                   </p>
                 </div>
               </div>
