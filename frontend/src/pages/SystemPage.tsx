@@ -6,9 +6,10 @@ type Props = {
   stakeMode: "soroban" | "treasury";
   sorobanConfigErr: string | null;
   onClearData: () => void;
+  supabaseError?: boolean;
 };
 
-export default function SystemPage({ stakeMode, sorobanConfigErr, onClearData }: Props) {
+export default function SystemPage({ stakeMode, sorobanConfigErr, onClearData, supabaseError }: Props) {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
@@ -64,10 +65,14 @@ export default function SystemPage({ stakeMode, sorobanConfigErr, onClearData }:
             <Database className="mt-1 h-6 w-6 shrink-0 text-blue-400" />
             <div>
               <h3 className="text-base font-bold text-slate-100">
-                Veri Modu: {isSupabaseConfigured ? "Supabase" : "LocalStorage"}
+                Veri Modu: {isSupabaseConfigured
+                  ? supabaseError
+                    ? "Supabase bağlantı hatası - LocalStorage fallback"
+                    : "Supabase"
+                  : "LocalStorage"}
               </h3>
               <p className="mt-1 text-sm text-slate-400">
-                {isSupabaseConfigured
+                {isSupabaseConfigured && !supabaseError
                   ? "Bu modda bildirimler tüm kullanıcılar arasında paylaşılır."
                   : "Bu modda kayıtlar sadece bu tarayıcıda görünür."}
               </p>

@@ -57,15 +57,23 @@ export async function fetchAllData() {
   if (!supabase) return null;
   
   try {
-    const [claimsRes, verificationsRes, ledgerRes] = await Promise.all([
-      supabase.from("claims").select("*").order("created_at", { ascending: false }),
-      supabase.from("verifications").select("*").order("created_at", { ascending: true }),
-      supabase.from("credit_ledger").select("*")
-    ]);
+    const claimsRes = await supabase.from("claims").select("*").order("created_at", { ascending: false });
+    if (claimsRes.error) {
+      console.error("Supabase claims fetch error:", claimsRes.error);
+      throw claimsRes.error;
+    }
 
-    if (claimsRes.error) throw claimsRes.error;
-    if (verificationsRes.error) throw verificationsRes.error;
-    if (ledgerRes.error) throw ledgerRes.error;
+    const verificationsRes = await supabase.from("verifications").select("*").order("created_at", { ascending: true });
+    if (verificationsRes.error) {
+      console.error("Supabase verifications fetch error:", verificationsRes.error);
+      throw verificationsRes.error;
+    }
+
+    const ledgerRes = await supabase.from("credit_ledger").select("*");
+    if (ledgerRes.error) {
+      console.error("Supabase credit ledger fetch error:", ledgerRes.error);
+      throw ledgerRes.error;
+    }
 
     const dbClaims = claimsRes.data as DBClaim[];
     const dbVerifs = verificationsRes.data as DBVerification[];
@@ -131,19 +139,19 @@ export async function insertClaim(claim: Claim) {
   try {
     const dbClaim: DBClaim = {
       id: claim.id,
-      title: claim.title,
-      description: claim.description,
-      location: claim.location,
-      incident_date: claim.incidentDate,
-      incident_time: claim.incidentTime,
-      category: claim.category,
-      creator_wallet: claim.creatorWallet,
-      ai: claim.ai,
-      status: claim.status,
-      created_at: claim.createdAt,
-      claim_hash: claim.claimHash || "",
-      ai_report_hash: claim.aiReportHash || "",
-      stake_amount: claim.stakeAmount,
+      title: claim.title || "Untitled",
+      description: claim.description || "",
+      location: claim.location || "",
+      incident_date: claim.incidentDate || "",
+      incident_time: claim.incidentTime || "",
+      category: claim.category || "other",
+      creator_wallet: claim.creatorWallet || "not-connected",
+      ai: claim.ai || {},
+      status: claim.status || "Needs Evidence",
+      created_at: claim.createdAt || new Date().toISOString(),
+      claim_hash: claim.claimHash || claim.id,
+      ai_report_hash: claim.aiReportHash || claim.id,
+      stake_amount: claim.stakeAmount || "0",
       stake_tx_hash: claim.stakeTxHash || "",
       reward_credits: claim.rewardCredits || 0,
       rewards_distributed: !!claim.rewardsDistributed,
@@ -163,16 +171,17 @@ export async function insertVerification(claimId: string, verification: Verifica
   if (!supabase) return;
   try {
     // We generate a dummy ID or use verificationHash as id
+    const fallbackId = verification.verificationHash || crypto.randomUUID();
     const dbVerif: DBVerification = {
-      id: verification.verificationHash || crypto.randomUUID(),
+      id: fallbackId,
       claim_id: claimId,
-      verifier_wallet: verification.verifierWallet,
-      decision: verification.decision,
-      note: verification.note,
+      verifier_wallet: verification.verifierWallet || "not-connected",
+      decision: verification.decision || "unsure",
+      note: verification.note || "",
       evidence_url: verification.evidenceUrl || null,
-      created_at: verification.createdAt,
-      verification_hash: verification.verificationHash || "",
-      stake_amount: verification.stakeAmount,
+      created_at: verification.createdAt || new Date().toISOString(),
+      verification_hash: verification.verificationHash || fallbackId,
+      stake_amount: verification.stakeAmount || "0",
       stake_tx_hash: verification.stakeTxHash || "",
       reward_credits: verification.rewardCredits || 0,
     };

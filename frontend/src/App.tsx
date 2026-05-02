@@ -64,6 +64,7 @@ export default function App() {
   const [creditLedger, setCreditLedger] = useState<CreditLedger>(() =>
     loadFromLS<CreditLedger>(LS_CREDITS, {})
   );
+  const [supabaseError, setSupabaseError] = useState(false);
 
   const walletConnected = wallet.connected;
   const walletAddress = walletConnected ? wallet.publicKey : "not-connected";
@@ -89,6 +90,9 @@ export default function App() {
         if (data) {
           setClaims(data.claims);
           setCreditLedger(data.creditLedger);
+          setSupabaseError(false);
+        } else {
+          setSupabaseError(true);
         }
       });
     }
@@ -369,6 +373,7 @@ export default function App() {
               stakeMode={stakeMode}
               sorobanConfigErr={sorobanConfigErr}
               onClearData={handleClearData}
+              supabaseError={supabaseError}
             />
           }
         />
