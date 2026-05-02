@@ -112,6 +112,7 @@ Frontend:
 - Tailwind CSS
 - Freighter API
 - Stellar SDK
+- Supabase Client (@supabase/supabase-js)
 
 Backend:
 
@@ -136,6 +137,8 @@ proofwitness/
   backend/
   contracts/
     proofwitness_escrow/
+  supabase/
+    schema.sql
   README.md
   SOROBAN.md
 ```
@@ -178,7 +181,18 @@ VITE_SOROBAN_ESCROW_CONTRACT_ID=CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7U
 VITE_XLM_TOKEN_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 VITE_STELLAR_NETWORK=testnet
 VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+
+# Supabase (Opsiyonel)
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+### 3. Supabase Setup (Optional)
+If you want to sync data across all users instead of using LocalStorage:
+1. Create a project on [Supabase](https://supabase.com/).
+2. Go to SQL Editor and paste the contents of `supabase/schema.sql` to create tables.
+3. For Hackathon MVP, the SQL script disables RLS to allow anonymous inserts. Note that in production, you should enable RLS and add proper policies.
+4. Add your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `frontend/.env`.
 
 ## Test Commands
 
@@ -256,6 +270,8 @@ Frontend:
   - `VITE_STELLAR_NETWORK`
   - `VITE_STELLAR_RPC_URL`
   - `VITE_STAKE_TREASURY_ADDRESS`
+  - `VITE_SUPABASE_URL` (Optional for data sync)
+  - `VITE_SUPABASE_ANON_KEY` (Optional for data sync)
 
 ## Limitations
 

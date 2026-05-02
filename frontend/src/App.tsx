@@ -4,6 +4,14 @@ import { getStakeMode, getSorobanConfigError } from "./lib/sorobanEscrow";
 import { connectWallet, tryAutoConnect } from "./lib/wallet";
 import type { WalletState, WalletError } from "./lib/wallet";
 import type { Claim, ClaimStatus, CreditLedger, Verification } from "./types";
+import {
+  isSupabaseConfigured,
+  fetchAllData,
+  insertClaim,
+  insertVerification,
+  updateClaimStatus,
+  updateCreditLedger,
+} from "./lib/supabase";
 
 import Layout from "./components/Layout";
 import DashboardPage from "./pages/DashboardPage";
@@ -75,6 +83,15 @@ export default function App() {
     tryAutoConnect().then((state) => {
       if (state.connected) setWallet(state);
     });
+
+    if (isSupabaseConfigured) {
+      fetchAllData().then((data) => {
+        if (data) {
+          setClaims(data.claims);
+          setCreditLedger(data.creditLedger);
+        }
+      });
+    }
   }, []);
 
   const handleConnect = useCallback(async () => {
@@ -138,6 +155,9 @@ export default function App() {
 
   const handleClaimCreated = useCallback((claim: Claim) => {
     setClaims((prev) => [claim, ...prev]);
+    if (isSupabaseConfigured) {
+      insertClaim(claim);
+    }
   }, []);
 
   const handleVerificationAdded = useCallback(
@@ -169,19 +189,38 @@ export default function App() {
               for (const [address, credits] of Object.entries(ledgerDelta)) {
                 newLedger[address] = (newLedger[address] || 0) + credits;
               }
-              return newLedger;
-            });
+              if (isSupabaseConfigured) {
+              updateCreditLedger(newLedger);
+            }
+            return newLedger;
+          });
 
-            return updatedClaim;
+          if (isSupabaseConfigured) {
+            insertVerification(claimId, verification).then(() => {
+              updateClaimStatus(updatedClaim);
+            });
           }
 
-          return {
-            ...claim,
-            verifications: updatedVerifications,
-            status: newStatus,
-          };
-        })
-      );
+          return updatedClaim;
+        }
+
+        const returnedClaim = {
+          ...claim,
+          verifications: updatedVerifications,
+          status: newStatus,
+        };
+
+        if (isSupabaseConfigured) {
+          insertVerification(claimId, verification).then(() => {
+            if (newStatus !== oldStatus) {
+              updateClaimStatus(returnedClaim);
+            }
+          });
+        }
+
+        return returnedClaim;
+      })
+    );
     },
     [distributeCredits]
   );
@@ -197,7 +236,16 @@ export default function App() {
 
   const handlePayoutDone = useCallback((claimId: string) => {
     setClaims((prev) =>
-      prev.map((claim) => (claim.id === claimId ? { ...claim, escrowPayoutDone: true } : claim))
+      prev.map((claim) => {
+        if (claim.id === claimId) {
+          const updated = { ...claim, escrowPayoutDone: true };
+          if (isSupabaseConfigured) {
+            updateClaimStatus(updated);
+          }
+          return updated;
+        }
+        return claim;
+      })
     );
   }, []);
 
