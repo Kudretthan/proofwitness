@@ -1,6 +1,6 @@
 import { AlertCircle, Trash2, Database } from "lucide-react";
 import SystemNotice from "../components/SystemNotice";
-import { isSupabaseConfigured } from "../lib/supabase";
+import { isSupabaseConfigured, hasSupabaseUrl, hasSupabaseKey } from "../lib/supabase";
 
 type Props = {
   stakeMode: "soroban" | "treasury";
@@ -63,19 +63,36 @@ export default function SystemPage({ stakeMode, sorobanConfigErr, onClearData, s
         <div className="mb-6 rounded-xl border border-slate-700 bg-slate-800/50 p-5">
           <div className="flex items-start gap-4">
             <Database className="mt-1 h-6 w-6 shrink-0 text-blue-400" />
-            <div>
-              <h3 className="text-base font-bold text-slate-100">
-                Veri Modu: {isSupabaseConfigured
-                  ? supabaseError
-                    ? "Supabase bağlantı hatası - LocalStorage fallback"
-                    : "Supabase"
-                  : "LocalStorage"}
-              </h3>
-              <p className="mt-1 text-sm text-slate-400">
-                {isSupabaseConfigured && !supabaseError
-                  ? "Bu modda bildirimler tüm kullanıcılar arasında paylaşılır."
-                  : "Bu modda kayıtlar sadece bu tarayıcıda görünür."}
-              </p>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Veri Modu: {isSupabaseConfigured
+                    ? supabaseError
+                      ? "Supabase bağlantı hatası - LocalStorage fallback"
+                      : "Supabase"
+                    : "LocalStorage"}
+                </h3>
+                <p className="mt-1 text-sm text-slate-400">
+                  {isSupabaseConfigured && !supabaseError
+                    ? "Bu modda bildirimler tüm kullanıcılar arasında paylaşılır."
+                    : "Bu modda kayıtlar sadece bu tarayıcıda görünür."}
+                </p>
+              </div>
+              
+              <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-3 text-sm">
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-slate-400">Supabase URL tanımlı mı:</span>
+                  <span className={hasSupabaseUrl ? "font-bold text-emerald-400" : "font-bold text-red-400"}>
+                    {hasSupabaseUrl ? "Evet" : "Hayır"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-slate-400">Supabase Key tanımlı mı:</span>
+                  <span className={hasSupabaseKey ? "font-bold text-emerald-400" : "font-bold text-red-400"}>
+                    {hasSupabaseKey ? "Evet" : "Hayır"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -4,7 +4,11 @@ import type { Claim, Verification, CreditLedger } from "../types";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+console.log("Supabase config:", { hasUrl: !!supabaseUrl, hasKey: !!supabaseAnonKey });
+
+export const hasSupabaseUrl = !!supabaseUrl;
+export const hasSupabaseKey = !!supabaseAnonKey;
+export const isSupabaseConfigured = hasSupabaseUrl && hasSupabaseKey;
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
@@ -59,19 +63,19 @@ export async function fetchAllData() {
   try {
     const claimsRes = await supabase.from("claims").select("*").order("created_at", { ascending: false });
     if (claimsRes.error) {
-      console.error("Supabase claims fetch error:", claimsRes.error);
+      console.error("Supabase claims fetch error:", JSON.stringify(claimsRes.error, null, 2));
       throw claimsRes.error;
     }
 
     const verificationsRes = await supabase.from("verifications").select("*").order("created_at", { ascending: true });
     if (verificationsRes.error) {
-      console.error("Supabase verifications fetch error:", verificationsRes.error);
+      console.error("Supabase verifications fetch error:", JSON.stringify(verificationsRes.error, null, 2));
       throw verificationsRes.error;
     }
 
     const ledgerRes = await supabase.from("credit_ledger").select("*");
     if (ledgerRes.error) {
-      console.error("Supabase credit ledger fetch error:", ledgerRes.error);
+      console.error("Supabase credit ledger fetch error:", JSON.stringify(ledgerRes.error, null, 2));
       throw ledgerRes.error;
     }
 
@@ -128,7 +132,7 @@ export async function fetchAllData() {
 
     return { claims, creditLedger };
   } catch (error) {
-    console.error("Supabase fetchAllData error:", error);
+    console.error("Supabase fetchAllData catch error:", JSON.stringify(error, null, 2));
     alert("Supabase'den veriler çekilirken hata oluştu. LocalStorage ile devam ediliyor.");
     return null;
   }
