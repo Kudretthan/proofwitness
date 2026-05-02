@@ -25,12 +25,22 @@ export type StakeMode = "treasury" | "soroban";
 export function getStakeMode(): StakeMode {
   const mode = (import.meta.env.VITE_STAKE_MODE || "").trim().toLowerCase();
   if (mode === "soroban") return "soroban";
-  if (mode === "treasury") return "treasury";
-  throw new Error(`VITE_STAKE_MODE hatalı veya eksik. "${mode}" bulundu. Sadece "soroban" veya "treasury" olmalıdır.`);
+  return "treasury"; // Varsayılan: treasury
+}
+
+/**
+ * Returns error message if VITE_STAKE_MODE is set but invalid.
+ * Returns null if value is acceptable.
+ */
+export function getStakeModeConfigError(): string | null {
+  const raw = (import.meta.env.VITE_STAKE_MODE || "").trim();
+  if (raw === "soroban" || raw === "treasury") return null;
+  return `VITE_STAKE_MODE hatalı veya eksik: "${raw}" bulundu. Sadece "soroban" veya "treasury" olmalıdır.`;
 }
 
 export function isSorobanReady(): boolean {
-  return !!ESCROW_CONTRACT_ID && !!XLM_TOKEN_ID;
+  // Hem contract ID'leri hem de RPC URL'yi kontrol et
+  return !!ESCROW_CONTRACT_ID && !!XLM_TOKEN_ID && !!SOROBAN_RPC_URL;
 }
 
 export function getSorobanConfigError(): string | null {
@@ -39,6 +49,9 @@ export function getSorobanConfigError(): string | null {
   }
   if (!XLM_TOKEN_ID) {
     return "VITE_XLM_TOKEN_CONTRACT_ID tanımlı değil. Testnet native XLM contract ID'sini .env dosyasına ekleyin.";
+  }
+  if (!SOROBAN_RPC_URL) {
+    return "VITE_STELLAR_RPC_URL tanımlı değil.";
   }
   return null;
 }

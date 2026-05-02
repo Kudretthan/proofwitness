@@ -15,6 +15,7 @@ import { buildVerificationHash } from "../lib/hash";
 import {
   getSorobanConfigError,
   getStakeMode,
+  getStakeModeConfigError,
   isSorobanReady,
   sorobanAddVerificationWithStake,
 } from "../lib/sorobanEscrow";
@@ -109,13 +110,20 @@ export default function VerificationForm({
       return;
     }
 
+    // VITE_STAKE_MODE geçersizse işlemi durdur
+    const stakeModeErr = getStakeModeConfigError();
+    if (stakeModeErr) {
+      setError(stakeModeErr);
+      return;
+    }
+
     if (stakeMode === "soroban") {
       if (!isSorobanReady()) {
         const configErr = getSorobanConfigError();
         setError(configErr || "Soroban escrow yapılandırması eksik.");
         return;
       }
-    } else {
+    } else if (stakeMode === "treasury") {
       const treasury = getTreasuryAddress();
       if (!treasury) {
         setError("Stake treasury adresi tanımlı değil.");
@@ -166,9 +174,10 @@ export default function VerificationForm({
           stakeTxHash = result.txHash;
         } catch (err: unknown) {
           console.error("Soroban escrow failed:", err);
+          // Soroban modunda treasury fallback YOKTUR. İşlemi durdur.
           throw new Error("Soroban escrow işlemi başarısız oldu. Treasury fallback devre dışı.");
         }
-      } else {
+      } else if (stakeMode === "treasury") {
         const treasury = getTreasuryAddress();
         const stakeResult = await stakeXlmWithFreighter({
           sourcePublicKey: walletAddress,
@@ -182,6 +191,9 @@ export default function VerificationForm({
         }
 
         stakeTxHash = stakeResult.hash;
+      } else {
+        // Bu noktaya asılırsa VITE_STAKE_MODE yanlış tanımlanmış demektir
+        throw new Error("Geçersiz stake modu. Doğrulama eklenemedi.");
       }
 
       setLoadingMsg("Doğrulama ekleniyor...");

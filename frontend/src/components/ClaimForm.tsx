@@ -5,6 +5,7 @@ import { buildAiReportHash, buildClaimHash } from "../lib/hash";
 import {
   getSorobanConfigError,
   getStakeMode,
+  getStakeModeConfigError,
   isSorobanReady,
   sorobanCreateClaimWithStake,
 } from "../lib/sorobanEscrow";
@@ -78,13 +79,20 @@ export default function ClaimForm({ walletAddress, walletConnected, onClaimCreat
       return;
     }
 
+    // VITE_STAKE_MODE geçersizse işlemi durdur
+    const stakeModeErr = getStakeModeConfigError();
+    if (stakeModeErr) {
+      setError(stakeModeErr);
+      return;
+    }
+
     if (stakeMode === "soroban") {
       if (!isSorobanReady()) {
         const configErr = getSorobanConfigError();
         setError(configErr || "Soroban escrow yapılandırması eksik.");
         return;
       }
-    } else {
+    } else if (stakeMode === "treasury") {
       const treasury = getTreasuryAddress();
       if (!treasury) {
         setError("Stake treasury adresi tanımlı değil.");
@@ -124,9 +132,10 @@ export default function ClaimForm({ walletAddress, walletConnected, onClaimCreat
           stakeTxHash = result.txHash;
         } catch (err: unknown) {
           console.error("Soroban escrow failed:", err);
+          // Soroban modunda treasury fallback YOKTUR. İşlemi durdur.
           throw new Error("Soroban escrow işlemi başarısız oldu. Treasury fallback devre dışı.");
         }
-      } else {
+      } else if (stakeMode === "treasury") {
         const treasury = getTreasuryAddress();
         const stakeResult = await stakeXlmWithFreighter({
           sourcePublicKey: walletAddress,
@@ -140,6 +149,9 @@ export default function ClaimForm({ walletAddress, walletConnected, onClaimCreat
         }
 
         stakeTxHash = stakeResult.hash;
+      } else {
+        // Bu noktaya asılırsa VITE_STAKE_MODE yanlış tanımlanmış demektir
+        throw new Error("Geçersiz stake modu. Claim oluşturulamadı.");
       }
 
       const claim: Claim = {
