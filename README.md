@@ -19,6 +19,54 @@ ProofWitness lets users:
 5. Lock stake logic through Soroban escrow.
 6. Build wallet-based reputation through accurate contributions.
 
+## Live Demo
+
+Frontend:
+https://proofwitness.vercel.app
+
+Backend health:
+https://proofwitness.onrender.com/api/health
+
+GitHub:
+https://github.com/Kudretthan/proofwitness
+
+Soroban Escrow Contract:
+CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
+
+Native XLM Token Contract:
+CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+
+## Deployment Architecture
+
+- **Frontend** is deployed on Vercel.
+- **Backend API** is deployed on Render.
+- **Shared application data** is stored in Supabase.
+- **Blockchain actions** are signed with Freighter and executed on Stellar Testnet / Soroban.
+- **AI risk analysis** is handled by the backend using Gemini API.
+- **Evidence uploads** are handled by backend local upload storage for MVP/demo purposes.
+
+```text
+User Browser
+↓
+Vercel Frontend
+↓
+Render Backend → Gemini API
+↓
+Supabase Database
+↓
+Freighter Wallet → Stellar Testnet / Soroban Escrow
+```
+
+## Production URLs
+
+| Service | URL / Identifier |
+|---|---|
+| Frontend | https://proofwitness.vercel.app |
+| Backend Health | https://proofwitness.onrender.com/api/health |
+| GitHub Repository | https://github.com/Kudretthan/proofwitness |
+| Soroban Escrow Contract | CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G |
+| Native XLM Token Contract | CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC |
+
 ## Key Features
 
 - AI risk analysis
@@ -143,56 +191,81 @@ proofwitness/
   SOROBAN.md
 ```
 
-## Local Setup
+## Environment Variables
 
-### 1. Backend
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-Backend `.env`:
+### Frontend / Vercel:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
-PORT=4000
-FRONTEND_URL=http://localhost:5173
-```
-
-### 2. Frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-Frontend `.env`:
-
-```env
-VITE_API_BASE_URL=http://localhost:4000
+VITE_API_BASE_URL=https://proofwitness.onrender.com
 VITE_STAKE_TREASURY_ADDRESS=GAKCKLXUOMY4CA7444ALGWFHTCH4LOGIMNLBLERCO4YA2ARJE7STQPW4
 VITE_STAKE_MODE=soroban
 VITE_SOROBAN_ESCROW_CONTRACT_ID=CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
 VITE_XLM_TOKEN_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 VITE_STELLAR_NETWORK=testnet
 VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
-
-# Supabase (Opsiyonel)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
 ```
 
-### 3. Supabase Setup (Optional)
-If you want to sync data across all users instead of using LocalStorage:
-1. Create a project on [Supabase](https://supabase.com/).
-2. Go to SQL Editor and paste the contents of `supabase/schema.sql` to create tables.
-3. For Hackathon MVP, the SQL script disables RLS to allow anonymous inserts. Note that in production, you should enable RLS and add proper policies.
-4. Add your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `frontend/.env`.
+### Backend / Render:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+FRONTEND_URL=https://proofwitness.vercel.app
+```
+
+> **Önemli Not:**
+> - Do not commit real `.env` files.
+> - Do not expose `GEMINI_API_KEY`.
+> - Supabase anon/publishable key is intended for browser usage in this MVP.
+> - Production should use RLS policies and stricter access control.
+
+## Supabase Shared Data Layer
+
+Originally, the MVP used `localStorage`. That meant each browser had its own claim list.
+Supabase was added so multiple users can see the same claims and verifications in the deployed app.
+
+**Tables:**
+- `claims`
+- `verifications`
+- `credit_ledger`
+
+*Note: For hackathon speed, RLS is disabled / unrestricted. For production, RLS policies should be added.*
+
+## Deployment Steps
+
+### Backend on Render
+
+1. Create a Web Service from GitHub repository.
+2. Root Directory: `backend`
+3. Build Command: `npm install`
+4. Start Command: `npm start`
+5. Add environment variables:
+   - `GEMINI_API_KEY`
+   - `FRONTEND_URL`
+6. Deploy and test:
+   https://proofwitness.onrender.com/api/health
+
+### Frontend on Vercel
+
+1. Import GitHub repository.
+2. Root Directory: `frontend`
+3. Framework Preset: `Vite`
+4. Build Command: `npm run build`
+5. Output Directory: `dist`
+6. Add `VITE_` environment variables.
+7. Deploy.
+8. If using React Router, Vercel SPA rewrite is required if implemented.
+
+### Supabase
+
+1. Create Supabase project.
+2. Create tables:
+   - `claims`
+   - `verifications`
+   - `credit_ledger`
+3. Add Project URL and publishable/anon key to Vercel.
+4. Redeploy frontend.
 
 ## Test Commands
 
@@ -231,7 +304,7 @@ cd contracts/proofwitness_escrow
 stellar contract build
 ```
 
-## Demo Flow
+## Demo Notes
 
 1. Open the app.
 2. Connect Freighter on Testnet.
@@ -244,45 +317,21 @@ stellar contract build
 9. Run payout / observe reputation credits.
 10. Show transaction hashes and Soroban contract details.
 
-## Deployment
+**Important Demo Details:**
+- Render free instance may sleep and take 30-60 seconds for the first backend request.
+- Freighter must be set to Testnet.
+- Use different Freighter accounts to demonstrate community verification.
+- If live demo fails, the project can still be demonstrated locally while Soroban contract remains live on Stellar Testnet.
 
-Backend:
+## Current MVP Limitations
 
-- Render or Railway
-- Root directory: `backend`
-- Build command: `npm install`
-- Start command: `npm start`
-- Env:
-  - `GEMINI_API_KEY`
-  - `FRONTEND_URL`
-
-Frontend:
-
-- Vercel
-- Root directory: `frontend`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Env:
-  - `VITE_API_BASE_URL`
-  - `VITE_STAKE_MODE`
-  - `VITE_SOROBAN_ESCROW_CONTRACT_ID`
-  - `VITE_XLM_TOKEN_CONTRACT_ID`
-  - `VITE_STELLAR_NETWORK`
-  - `VITE_STELLAR_RPC_URL`
-  - `VITE_STAKE_TREASURY_ADDRESS`
-  - `VITE_SUPABASE_URL` (Optional for data sync)
-  - `VITE_SUPABASE_ANON_KEY` (Optional for data sync)
-
-## Limitations
-
-- This is a hackathon MVP.
-- Evidence upload uses backend local storage.
-- AI does not verify real-world truth.
-- Reputation is local/demo state.
-- Production needs persistent storage.
-- Production Soroban escrow needs deeper security review.
-- Image content is not yet fully analyzed by AI.
-- Real disaster data integrations are future work.
+- Evidence uploads use Render/backend local storage and are not permanent.
+- Supabase is used as shared app database; production needs RLS.
+- AI does not determine truth, only risk and verification need.
+- Soroban escrow is on Testnet.
+- Testnet XLM has no real monetary value.
+- Image AI verification is future work.
+- Official disaster data integrations are future work.
 
 ## Future Work
 
