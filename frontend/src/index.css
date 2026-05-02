@@ -1,0 +1,129 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+/* ─── Base layer ─── */
+@layer base {
+  :root {
+    --color-brand: #6366f1;
+    --color-brand-light: #818cf8;
+    --color-surface: #0f1117;
+    --color-surface-elevated: #181b25;
+    --color-surface-card: #1e2231;
+    --color-border: #2a2e3d;
+    --color-text: #e5e7eb;
+    --color-text-muted: #9ca3af;
+    --color-green: #22c55e;
+    --color-red: #ef4444;
+    --color-amber: #f59e0b;
+    --color-cyan: #06b6d4;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background: var(--color-surface);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3e4d;
+  }
+}
+
+/* ─── Utility classes ─── */
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #818cf8 0%, #06b6d4 50%, #22c55e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-glow {
+    box-shadow: 0 0 0 1px var(--color-border),
+      0 4px 24px rgba(99, 102, 241, 0.06);
+  }
+
+  .card-glow-green {
+    box-shadow: 0 0 0 1px #22c55e44, 0 4px 24px rgba(34, 197, 94, 0.08);
+  }
+
+  .card-glow-red {
+    box-shadow: 0 0 0 1px #ef444444, 0 4px 24px rgba(239, 68, 68, 0.08);
+  }
+
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-5 rounded-xl
+      transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+      shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply bg-[var(--color-surface-card)] hover:bg-[#252a3a] text-gray-300 font-medium py-2.5 px-5 rounded-xl
+      transition-all duration-200 cursor-pointer border border-[var(--color-border)]
+      hover:border-indigo-500/40 active:scale-[0.98];
+  }
+
+  .input-field {
+    @apply w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3
+      text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1
+      focus:ring-indigo-500/50 transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full;
+  }
+}
+
+/* ─── Animations ─── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s ease-out forwards;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
