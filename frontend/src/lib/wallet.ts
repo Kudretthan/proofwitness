@@ -124,20 +124,32 @@ export function getWalletErrorMessage(error: WalletError | unknown): string {
 export async function checkInstalled(): Promise<{ installed: boolean; error?: string }> {
   try {
     const result = await freighterIsConnected();
-    // freighter-api v2+ returns { isConnected: boolean }
-    if (typeof result === "object" && result !== null && "isConnected" in result) {
-      return { installed: true };
-    }
+    console.debug("Freighter isConnected result:", result);
+    
+    // Handle various response formats
     if (typeof result === "boolean") {
       return { installed: result };
     }
+    
+    if (typeof result === "object" && result !== null) {
+      const obj = result as any;
+      if (obj.isConnected === true || obj.isConnected === false) {
+        return { installed: true };
+      }
+      if (obj.installed === true || obj.installed === false) {
+        return { installed: true };
+      }
+    }
+    
     return { installed: Boolean(result) };
-  } catch (err) {
-    console.error("Freighter installation check failed:", err);
-    const errorMsg = String(err);
+  } catch (error) {
+    console.error("Freighter installation check failed:", error);
+    const errorMsg = String(error);
+    
     if (errorMsg.includes("locked")) {
       return { installed: true, error: "locked" };
     }
+    
     return { installed: false, error: "not_installed" };
   }
 }
@@ -145,114 +157,102 @@ export async function checkInstalled(): Promise<{ installed: boolean; error?: st
 /**
  * Connect wallet and return wallet state with detailed error handling.
  * Uses requestAccess() to ensure proper permission flow.
+ * Returns WalletState with connected: true and publicKey set on success.
  */
 export async function connectWallet(): Promise<WalletState> {
-  try {
-    // 1. Check installation
-    const installCheck = await checkInstalled();
-    if (!installCheck.installed) {
-      console.error("Freighter connection failed: not installed");
-      return {
-        ...EMPTY_STATE,
-        installed: false,
-        error: "not_installed",
-      };
-    }
-
-    // 2. Request access from user (mandatory permission flow)
-    let publicKey = "";
-    let accessError: WalletError | null = null;
-
-    try {
-      console.log("Calling Freighter requestAccess()...");
-      const accessResponse = await freighterRequestAccess();
-      console.log("Freighter requestAccess response:", accessResponse);
-
-      // Extract address from various response formats
-      publicKey = extractFreighterAddress(accessResponse) || "";
-
-      if (!publicKey) {
-        console.log("No address from requestAccess, trying fallback getAddress()...");
-        try {
-          const fallbackResponse = await freighterGetAddress();
-          console.log("Freighter getAddress response:", fallbackResponse);
-          publicKey = extractFreighterAddress(fallbackResponse) || "";
-        } catch (fallbackErr) {
-          console.error("Fallback getAddress also failed:", fallbackErr);
-        }
-      }
-    } catch (err) {
-      console.error("Freighter requestAccess failed:", err);
-      const errorStr = String(err);
-
-      if (errorStr.includes("locked") || errorStr.includes("timeout")) {
-        accessError = "locked";
-      } else if (
-        errorStr.includes("permission") ||
-        errorStr.includes("user rejected") ||
-        errorStr.includes("User has") ||
-        errorStr.includes("denied")
-      ) {
-        accessError = "permission_denied";
-      } else if (errorStr.includes("network")) {
-        accessError = "network_error";
-      } else {
-        accessError = "unknown_error";
-      }
-    }
-
-    if (accessError) {
-      return {
-        installed: true,
-        connected: false,
-        publicKey: "",
-        network: "",
-        error: accessError,
-      };
-    }
-
-    if (!publicKey) {
-      console.error(
-        "Freighter adresi alınamadı. requestAccess ve fallback getAddress başarısız."
-      );
-      return {
-        installed: true,
-        connected: false,
-        publicKey: "",
-        network: "",
-        error: "unknown_error",
-      };
-    }
-
-    // 3. Get network (best effort, don't fail if error)
-    let network = "unknown";
-    try {
-      const netResult = await freighterGetNetwork();
-      console.log("Freighter network result:", netResult);
-      
-      if (typeof netResult === "object" && netResult !== null && "network" in netResult) {
-        network = (netResult as { network: string }).network || "unknown";
-      } else if (typeof netResult === "string") {
-        network = netResult || "unknown";
-      }
-    } catch (err) {
-      console.warn("Could not determine network (continuing anyway):", err);
-      // Continue even if network detection fails
-    }
-
-    return {
-      installed: true,
-      connected: true,
-      publicKey,
-      network,
-    };
-  } catch (err) {
-    console.error("Freighter connection failed:", err);
+  // Step 1: Check if Freighter is installed
+  const installCheck = await checkInstalled();
+  if (!installCheck.installed) {
+    console.error("Freighter connection failed: not installed");
     return {
       ...EMPTY_STATE,
+      installed: false,
+      error: "not_installed",
+    };
+  }
+
+  // Step 2: Request access from user (main permission flow)
+  let publicKey = "";
+  try {
+    const accessResponse = await freighterRequestAccess();
+    console.log("Freighter requestAccess response:", accessResponse);
+    publicKey = extractFreighterAddress(accessResponse) || "";
+  } catch (error) {
+    console.error("Freighter requestAccess failed:", error);
+    
+    const errorStr = String(error);
+    let errorType: WalletError = "unknown_error";
+    
+    if (errorStr.includes("locked") || errorStr.includes("timeout")) {
+      errorType = "locked";
+    } else if (errorStr.includes("permission") || errorStr.includes("user rejected") || errorStr.includes("denied")) {
+      errorType = "permission_denied";
+    } else if (errorStr.includes("network")) {
+      errorType = "network_error";
+    }
+    
+    return {
+      installed: true,
+      connected: false,
+      publicKey: "",
+      network: "",
+      error: errorType,
+    };
+  }
+
+  // Step 3: Fallback to getAddress if requestAccess didn't return address
+  if (!publicKey) {
+    try {
+      const addressResponse = await freighterGetAddress();
+      console.log("Freighter getAddress response:", addressResponse);
+      publicKey = extractFreighterAddress(addressResponse) || "";
+    } catch (error) {
+      console.error("Freighter getAddress fallback failed:", error);
+    }
+  }
+
+  // Step 4: Check if we got address after both attempts
+  if (!publicKey) {
+    console.error("Freighter connection failed: no address found");
+    return {
+      installed: true,
+      connected: false,
+      publicKey: "",
+      network: "",
       error: "unknown_error",
     };
   }
+
+  // Step 5: Get network info (best effort, don't fail if this fails)
+  let network = "unknown";
+  try {
+    const networkResponse = await freighterGetNetwork();
+    console.log("Freighter network response:", networkResponse);
+    
+    if (typeof networkResponse === "string") {
+      network = networkResponse;
+    } else if (networkResponse && typeof networkResponse === "object") {
+      const obj = networkResponse as any;
+      if (obj.network) {
+        network = obj.network;
+      } else if (obj.networkPassphrase) {
+        network = obj.networkPassphrase;
+      } else if (obj.result && obj.result.network) {
+        network = obj.result.network;
+      }
+    }
+  } catch (error) {
+    console.warn("Could not determine network:", error);
+    // Continue anyway - network detection is best effort
+  }
+
+  // Step 6: Return success with publicKey
+  return {
+    installed: true,
+    connected: true,
+    publicKey,
+    network,
+  };
 }
 
 /**
@@ -271,48 +271,67 @@ export function shortAddress(address: string): string {
  * otherwise returns disconnected state without bothering the user.
  */
 export async function tryAutoConnect(): Promise<WalletState> {
-  try {
-    const installCheck = await checkInstalled();
-    if (!installCheck.installed) {
-      return EMPTY_STATE;
-    }
-
-    // Try getting address silently — if permission was granted before,
-    // this returns the key without a popup
-    let publicKey = "";
-    try {
-      const addrResult = await freighterGetAddress();
-      console.debug("Auto-connect getAddress response:", addrResult);
-      publicKey = extractFreighterAddress(addrResult) || "";
-    } catch (err) {
-      // Permission not granted or user needs to reconnect
-      console.debug("Auto-connect getAddress failed (expected if no prior permission):", err);
-      return { installed: true, connected: false, publicKey: "", network: "" };
-    }
-
-    if (!publicKey) {
-      console.debug("Auto-connect: no publicKey found");
-      return { installed: true, connected: false, publicKey: "", network: "" };
-    }
-
-    let network = "unknown";
-    try {
-      const netResult = await freighterGetNetwork();
-      console.debug("Auto-connect getNetwork response:", netResult);
-      
-      if (typeof netResult === "object" && netResult !== null && "network" in netResult) {
-        network = (netResult as { network: string }).network || "unknown";
-      } else if (typeof netResult === "string") {
-        network = netResult || "unknown";
-      }
-    } catch (err) {
-      console.debug("Could not determine network during auto-connect (continuing):", err);
-      // Don't fail if network detection fails
-    }
-
-    return { installed: true, connected: true, publicKey, network };
-  } catch (err) {
-    console.debug("Auto-connect error:", err);
+  // Step 1: Check if Freighter is installed
+  const installCheck = await checkInstalled();
+  if (!installCheck.installed) {
     return EMPTY_STATE;
   }
+
+  // Step 2: Try getting address silently (no popup if permission was already granted)
+  let publicKey = "";
+  try {
+    const addressResponse = await freighterGetAddress();
+    console.debug("Auto-connect getAddress response:", addressResponse);
+    publicKey = extractFreighterAddress(addressResponse) || "";
+  } catch (error) {
+    console.debug("Auto-connect getAddress failed (expected if no prior permission):", error);
+    return {
+      installed: true,
+      connected: false,
+      publicKey: "",
+      network: "",
+    };
+  }
+
+  // Step 3: Check if we got address
+  if (!publicKey) {
+    console.debug("Auto-connect: no publicKey found");
+    return {
+      installed: true,
+      connected: false,
+      publicKey: "",
+      network: "",
+    };
+  }
+
+  // Step 4: Get network info (best effort)
+  let network = "unknown";
+  try {
+    const networkResponse = await freighterGetNetwork();
+    console.debug("Auto-connect getNetwork response:", networkResponse);
+    
+    if (typeof networkResponse === "string") {
+      network = networkResponse;
+    } else if (networkResponse && typeof networkResponse === "object") {
+      const obj = networkResponse as any;
+      if (obj.network) {
+        network = obj.network;
+      } else if (obj.networkPassphrase) {
+        network = obj.networkPassphrase;
+      } else if (obj.result && obj.result.network) {
+        network = obj.result.network;
+      }
+    }
+  } catch (error) {
+    console.debug("Auto-connect: could not determine network:", error);
+    // Continue anyway - network detection is best effort
+  }
+
+  // Step 5: Return success with publicKey
+  return {
+    installed: true,
+    connected: true,
+    publicKey,
+    network,
+  };
 }
