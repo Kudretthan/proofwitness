@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { getStakeMode, getSorobanConfigError } from "./lib/sorobanEscrow";
 import { connectWallet, tryAutoConnect } from "./lib/wallet";
-import type { WalletState } from "./lib/wallet";
+import type { WalletState, WalletError } from "./lib/wallet";
 import type { Claim, ClaimStatus, CreditLedger, Verification } from "./types";
 
 import Layout from "./components/Layout";
@@ -50,6 +50,7 @@ export default function App() {
     publicKey: "",
     network: "",
   });
+  const [walletError, setWalletError] = useState<WalletError | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [claims, setClaims] = useState<Claim[]>(() => loadFromLS<Claim[]>(LS_CLAIMS, []));
   const [creditLedger, setCreditLedger] = useState<CreditLedger>(() =>
@@ -78,16 +79,19 @@ export default function App() {
 
   const handleConnect = useCallback(async () => {
     setConnecting(true);
+    setWalletError(null);
     try {
       const state = await connectWallet();
       setWallet(state);
-      if (!state.installed) {
-        alert("Freighter cüzdanı yüklü değil. Lütfen freighter.app adresinden yükleyin.");
-      } else if (!state.connected) {
-        alert("Freighter'a bağlanılamadı. Lütfen tekrar deneyin.");
+      if (state.error) {
+        setWalletError(state.error as WalletError);
+        console.error("Freighter connection failed:", state.error);
+      } else if (state.connected) {
+        setWalletError(null);
       }
-    } catch {
-      alert("Freighter'a bağlanırken bir hata oluştu.");
+    } catch (err) {
+      console.error("Freighter connection failed:", err);
+      setWalletError("unknown_error");
     } finally {
       setConnecting(false);
     }
@@ -232,6 +236,7 @@ export default function App() {
             verifiedCount={verifiedClaims.length}
             disputedCount={disputedClaims.length}
             wallet={wallet}
+            walletError={walletError}
             connecting={connecting}
             userCredits={userCredits}
             onConnect={handleConnect}

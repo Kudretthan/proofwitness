@@ -2,13 +2,14 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { LayoutDashboard, FilePlus, AlertCircle, CheckCircle2, XCircle, Award, Settings, Menu, X, Shield } from "lucide-react";
 import { useState } from "react";
 import WalletSummary from "./WalletSummary";
-import type { WalletState } from "../lib/wallet";
+import type { WalletState, WalletError } from "../lib/wallet";
 
 type Props = {
   activeCount: number;
   verifiedCount: number;
   disputedCount: number;
   wallet: WalletState;
+  walletError?: WalletError | null;
   connecting: boolean;
   userCredits: number;
   onConnect: () => Promise<void>;
@@ -20,6 +21,7 @@ export default function Layout({
   verifiedCount,
   disputedCount,
   wallet,
+  walletError,
   connecting,
   userCredits,
   onConnect,
@@ -97,6 +99,7 @@ export default function Layout({
         <div className="border-t border-slate-800 p-4 lg:hidden">
            <WalletSummary
             wallet={wallet}
+            walletError={walletError}
             onConnect={onConnect}
             connecting={connecting}
             userCredits={userCredits}
@@ -111,6 +114,7 @@ export default function Layout({
         <header className="sticky top-0 z-20 hidden h-16 items-center justify-end border-b border-slate-800 bg-slate-950/80 px-8 backdrop-blur-xl lg:flex">
           <WalletSummary
             wallet={wallet}
+            walletError={walletError}
             onConnect={onConnect}
             connecting={connecting}
             userCredits={userCredits}

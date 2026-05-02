@@ -8,16 +8,18 @@ import {
   Trash2,
   Unplug,
   Wallet,
+  AlertTriangle,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { getBadgeByCredits } from "../lib/reputation";
 import { getStakeMode } from "../lib/sorobanEscrow";
 import { getTreasuryAddress } from "../lib/stellarStake";
-import type { WalletState } from "../lib/wallet";
-import { shortAddress } from "../lib/wallet";
+import type { WalletState, WalletError } from "../lib/wallet";
+import { shortAddress, getWalletErrorMessage } from "../lib/wallet";
 
 type Props = {
   wallet: WalletState;
+  walletError?: WalletError | null;
   onConnect: () => void;
   connecting: boolean;
   userCredits: number;
@@ -47,6 +49,7 @@ function DetailRow({
 
 export default function WalletSummary({
   wallet,
+  walletError,
   onConnect,
   connecting,
   userCredits,
@@ -64,11 +67,19 @@ export default function WalletSummary({
   if (variant === "topbar") {
     if (!wallet.connected) {
       return (
-        <button onClick={onConnect} disabled={connecting} className="btn-primary px-3 py-2 sm:px-4">
-          <Unplug className="h-4 w-4" />
-          <span className="hidden sm:inline">{connecting ? "Bağlanıyor..." : "Freighter Bağla"}</span>
-          <span className="sm:hidden">Bağla</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {walletError && (
+            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-500/10 px-2 py-1 text-xs text-red-200">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span className="max-w-xs truncate">{getWalletErrorMessage(walletError)}</span>
+            </div>
+          )}
+          <button onClick={onConnect} disabled={connecting} className="btn-primary px-3 py-2 sm:px-4">
+            <Unplug className="h-4 w-4" />
+            <span className="hidden sm:inline">{connecting ? "Bağlanıyor..." : "Freighter Bağla"}</span>
+            <span className="sm:hidden">Bağla</span>
+          </button>
+        </div>
       );
     }
 
@@ -106,14 +117,29 @@ export default function WalletSummary({
       </div>
 
       {!wallet.connected ? (
-        <div className="rounded-2xl border border-indigo-400/20 bg-indigo-500/10 p-4">
-          <p className="text-sm text-indigo-100">
-            XLM stake ve doğrulama için Freighter cüzdanınızı bağlayın.
-          </p>
-          <button onClick={onConnect} disabled={connecting} className="btn-primary mt-4 w-full">
-            <Unplug className="h-4 w-4" />
-            {connecting ? "Bağlanıyor..." : "Freighter Bağla"}
-          </button>
+        <div className="space-y-3">
+          {walletError && (
+            <div className="rounded-2xl border border-red-400/25 bg-red-500/10 p-4">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-400 mt-0.5" />
+                <div className="text-sm text-red-100">
+                  <p className="font-semibold mb-1">{getWalletErrorMessage(walletError)}</p>
+                  <p className="text-xs text-red-200/80">
+                    Freighter'ı açın, Testnet seçin, proofwitness.vercel.app için site izni verin ve sayfayı yenileyin.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="rounded-2xl border border-indigo-400/20 bg-indigo-500/10 p-4">
+            <p className="text-sm text-indigo-100">
+              XLM stake ve doğrulama için Freighter cüzdanınızı bağlayın.
+            </p>
+            <button onClick={onConnect} disabled={connecting} className="btn-primary mt-4 w-full">
+              <Unplug className="h-4 w-4" />
+              {connecting ? "Bağlanıyor..." : "Freighter Bağla"}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -142,6 +168,16 @@ export default function WalletSummary({
             label="Rozet"
             value={<span className={badge.color}>{badge.label}</span>}
           />
+
+          {wallet.network !== "TESTNET" && wallet.network !== "testnet" && wallet.network !== "unknown" && (
+            <div className="rounded-lg border border-yellow-400/25 bg-yellow-500/10 p-3 text-xs text-yellow-200">
+              <p className="font-semibold mb-1 flex items-center gap-2">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Ağ Uyarısı
+              </p>
+              <p>Freighter'ın Stellar Testnet'e bağlı olduğundan emin olun. Şu anda: {wallet.network || "Bilinmiyor"}</p>
+            </div>
+          )}
         </div>
       )}
 
