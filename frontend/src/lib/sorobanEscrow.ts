@@ -17,6 +17,9 @@ const SOROBAN_RPC_URL =
 const ESCROW_CONTRACT_ID = import.meta.env.VITE_SOROBAN_ESCROW_CONTRACT_ID || "";
 const XLM_TOKEN_ID = import.meta.env.VITE_XLM_TOKEN_CONTRACT_ID || "";
 const NETWORK_PASSPHRASE = StellarSdk.Networks.TESTNET;
+const READ_ONLY_SOURCE_ACCOUNT =
+  import.meta.env.VITE_SOROBAN_READ_ONLY_SOURCE_ACCOUNT ||
+  "GBQRMRIH4UCY3YKHCJAHJZII4SFQ66XBBHKKQ7PV6Z6UKJN4F7VOV2C7";
 
 // ─── Stake Mode ───
 
@@ -67,16 +70,11 @@ export async function checkContractInitialized(): Promise<boolean> {
   const server = new StellarSdk.rpc.Server(SOROBAN_RPC_URL);
   const contract = new StellarSdk.Contract(ESCROW_CONTRACT_ID);
 
-  // Use a dummy account for simulation (won't submit)
+  // Use a valid account-shaped source for simulation only; no transaction is submitted.
   try {
-    const dummyAccount = await server.getAccount(ESCROW_CONTRACT_ID).catch(() => null);
-    if (!dummyAccount) {
-      // Try simulation with a placeholder — if contract panics with "not initialized"
-      // we know it needs init. If it panics with something else, it might be initialized.
-      return false;
-    }
+    const readOnlyAccount = new StellarSdk.Account(READ_ONLY_SOURCE_ACCOUNT, "0");
 
-    const tx = new StellarSdk.TransactionBuilder(dummyAccount, {
+    const tx = new StellarSdk.TransactionBuilder(readOnlyAccount, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
     })
@@ -86,12 +84,7 @@ export async function checkContractInitialized(): Promise<boolean> {
 
     const simResult = await server.simulateTransaction(tx);
     if (StellarSdk.rpc.Api.isSimulationError(simResult)) {
-      const errMsg = (simResult as StellarSdk.rpc.Api.SimulateTransactionErrorResponse).error || "";
-      if (errMsg.includes("not initialized") || errMsg.includes("contract not initialized")) {
-        return false;
-      }
-      // Other error = probably initialized but something else is wrong
-      return true;
+      return false;
     }
     return true;
   } catch {
@@ -126,8 +119,20 @@ export async function sorobanInitContract(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("sorobanInitContract failed:", err);
+    if (isAlreadyInitializedInitError(msg)) {
+      return { success: false, txHash: "", error: "Contract zaten initialize edilmiş." };
+    }
     return { success: false, txHash: "", error: msg };
   }
+}
+
+function isAlreadyInitializedInitError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("init") &&
+    lower.includes("invalidaction") &&
+    lower.includes("unreachablecodereached")
+  );
 }
 
 

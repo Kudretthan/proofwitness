@@ -55,7 +55,7 @@ export default function SystemPage({
       setInitResult({ success: true, message: `Contract başarıyla initialize edildi. TX: ${result.txHash}` });
     } else {
       const msg = result.error || "Bilinmeyen hata";
-      if (msg.includes("already initialized")) {
+      if (msg.includes("already initialized") || msg.includes("zaten initialize")) {
         setContractInitialized(true);
         setInitResult({ success: true, message: "Contract zaten initialize edilmiş." });
       } else {
