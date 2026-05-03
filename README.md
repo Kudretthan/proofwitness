@@ -37,7 +37,7 @@ Soroban Contract Explorer:
 https://stellar.expert/explorer/testnet/contract/CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
 
 Deployment Transaction:
-173a9b167f4e6b5a341877609a1c08517b53a382c634df221bf70a33da0734c4
+95faf73b257c943ccc8547f69b0c189b86d0aa87c12a7203dcc8989e37437aa8
 
 Initialization Transaction:
 https://stellar.expert/explorer/testnet/tx/95faf73b257c943ccc8547f69b0c189b86d0aa87c12a7203dcc8989e37437aa8
