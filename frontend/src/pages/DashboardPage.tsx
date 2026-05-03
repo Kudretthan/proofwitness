@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bot, CheckCircle2, Clock, Coins, Award, FileCheck2, Users, XCircle, ArrowRight } from "lucide-react";
+import { Bot, CheckCircle2, Clock, Coins, Award, FileCheck2, Users, XCircle, ArrowRight, Wallet } from "lucide-react";
 import StatCard from "../components/StatCard";
 import SystemNotice from "../components/SystemNotice";
 import type { Claim } from "../types";
@@ -10,9 +10,12 @@ type Props = {
   stakeMode: "soroban" | "treasury";
   sorobanConfigErr: string | null;
   recentClaims: Claim[];
+  xlmBalance: string | null;
 };
 
-export default function DashboardPage({ stats, walletConnected, stakeMode, sorobanConfigErr, recentClaims }: Props) {
+export default function DashboardPage({ stats, walletConnected, stakeMode, sorobanConfigErr, recentClaims, xlmBalance }: Props) {
+  const walletBalanceLabel = walletConnected ? `${xlmBalance ?? "..."} XLM` : "Bağlı değil";
+
   return (
     <div className="space-y-8">
       <div>
@@ -29,6 +32,7 @@ export default function DashboardPage({ stats, walletConnected, stakeMode, sorob
         <StatCard label="Yanlışlanan" value={stats.disputed} icon={<XCircle className="h-5 w-5" />} tone="border-red-400/20 bg-red-500/10" />
         <StatCard label="Toplam Doğrulama" value={stats.totalVerifications} icon={<Users className="h-5 w-5" />} tone="border-cyan-400/20 bg-cyan-500/10" />
         <StatCard label="Toplam Stake (XLM)" value={stats.totalStaked} icon={<Coins className="h-5 w-5" />} tone="border-violet-400/20 bg-violet-500/10" />
+        <StatCard label="Cüzdan Bakiyesi" value={walletBalanceLabel} icon={<Wallet className="h-5 w-5" />} tone="border-cyan-400/20 bg-cyan-500/10" />
         <StatCard label="İtibar Kredisi" value={stats.distributedCredits} icon={<Award className="h-5 w-5" />} tone="border-sky-400/20 bg-sky-500/10" />
       </div>
 
@@ -39,6 +43,10 @@ export default function DashboardPage({ stats, walletConnected, stakeMode, sorob
              <div className="flex justify-between rounded-xl border border-slate-800 bg-slate-900/50 p-3">
                <span className="text-slate-400">Cüzdan Bağlantısı</span>
                <span className="font-bold text-slate-100">{walletConnected ? "Bağlı (Freighter)" : "Bağlı Değil"}</span>
+             </div>
+             <div className="flex justify-between rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+               <span className="text-slate-400">XLM Bakiyesi</span>
+               <span className="font-bold text-slate-100">{walletBalanceLabel}</span>
              </div>
              <div className="flex justify-between rounded-xl border border-slate-800 bg-slate-900/50 p-3">
                <span className="text-slate-400">Stake Modu</span>

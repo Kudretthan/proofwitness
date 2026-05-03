@@ -263,6 +263,32 @@ export function shortAddress(address: string): string {
   return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 
+function getHorizonUrl(network: string): string {
+  const normalized = network.toLowerCase();
+  if (normalized === "public" || normalized.includes("public global stellar network")) {
+    return "https://horizon.stellar.org";
+  }
+  return "https://horizon-testnet.stellar.org";
+}
+
+export async function getXlmBalance(publicKey: string, network = "TESTNET"): Promise<string> {
+  if (!publicKey) return "0.00";
+
+  const response = await fetch(`${getHorizonUrl(network)}/accounts/${publicKey}`);
+  if (response.status === 404) return "0.00";
+  if (!response.ok) {
+    throw new Error(`Horizon balance request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const nativeBalance = data?.balances?.find((balance: { asset_type?: string }) => {
+    return balance.asset_type === "native";
+  });
+
+  const amount = Number.parseFloat(nativeBalance?.balance || "0");
+  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
+}
+
 /**
  * Try to auto-reconnect Freighter silently (no requestAccess popup).
  * Only uses silent getAddress and isConnected checks.

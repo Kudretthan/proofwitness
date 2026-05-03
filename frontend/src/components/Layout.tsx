@@ -12,6 +12,7 @@ type Props = {
   walletError?: WalletError | null;
   connecting: boolean;
   userCredits: number;
+  xlmBalance: string | null;
   onConnect: () => Promise<void>;
   onClearData: () => void;
 };
@@ -24,6 +25,7 @@ export default function Layout({
   walletError,
   connecting,
   userCredits,
+  xlmBalance,
   onConnect,
   onClearData,
 }: Props) {
@@ -103,6 +105,7 @@ export default function Layout({
             onConnect={onConnect}
             connecting={connecting}
             userCredits={userCredits}
+            xlmBalance={xlmBalance}
             onClearData={onClearData}
             variant="card"
           />
@@ -118,6 +121,7 @@ export default function Layout({
             onConnect={onConnect}
             connecting={connecting}
             userCredits={userCredits}
+            xlmBalance={xlmBalance}
             onClearData={onClearData}
             variant="topbar"
           />

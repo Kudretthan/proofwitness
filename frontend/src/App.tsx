@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { getStakeMode, getSorobanConfigError } from "./lib/sorobanEscrow";
-import { connectWallet, tryAutoConnect } from "./lib/wallet";
+import { connectWallet, getXlmBalance, tryAutoConnect } from "./lib/wallet";
 import type { WalletState, WalletError } from "./lib/wallet";
 import type { Claim, ClaimStatus, CreditLedger, Verification } from "./types";
 import {
@@ -60,6 +60,7 @@ export default function App() {
   });
   const [walletError, setWalletError] = useState<WalletError | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [xlmBalance, setXlmBalance] = useState<string | null>(null);
   const [claims, setClaims] = useState<Claim[]>(() => loadFromLS<Claim[]>(LS_CLAIMS, []));
   const [creditLedger, setCreditLedger] = useState<CreditLedger>(() =>
     loadFromLS<CreditLedger>(LS_CREDITS, {})
@@ -97,6 +98,29 @@ export default function App() {
       });
     }
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!wallet.connected || !wallet.publicKey) {
+      setXlmBalance(null);
+      return;
+    }
+
+    setXlmBalance(null);
+    getXlmBalance(wallet.publicKey, wallet.network)
+      .then((balance) => {
+        if (!cancelled) setXlmBalance(balance);
+      })
+      .catch((err) => {
+        console.error("XLM Bakiye çekme hatası:", err);
+        if (!cancelled) setXlmBalance("0.00");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [wallet.connected, wallet.publicKey, wallet.network]);
 
   const handleConnect = useCallback(async () => {
     setConnecting(true);
@@ -291,6 +315,7 @@ export default function App() {
             walletError={walletError}
             connecting={connecting}
             userCredits={userCredits}
+            xlmBalance={xlmBalance}
             onConnect={handleConnect}
             onClearData={handleClearData}
           />
@@ -304,6 +329,7 @@ export default function App() {
               walletConnected={walletConnected}
               stakeMode={stakeMode}
               sorobanConfigErr={sorobanConfigErr}
+              xlmBalance={xlmBalance}
               recentClaims={claims.slice(0, 5)}
             />
           }

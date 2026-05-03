@@ -24,6 +24,7 @@ type Props = {
   connecting: boolean;
   userCredits: number;
   onClearData: () => void;
+  xlmBalance: string | null;
   variant?: "topbar" | "card";
 };
 
@@ -54,6 +55,7 @@ export default function WalletSummary({
   connecting,
   userCredits,
   onClearData,
+  xlmBalance,
   variant = "topbar",
 }: Props) {
   const treasury = getTreasuryAddress();
@@ -93,6 +95,12 @@ export default function WalletSummary({
           <Award className="h-3.5 w-3.5" />
           {userCredits}
         </span>
+        {xlmBalance !== null && (
+          <span className="badge border border-cyan-400/25 bg-cyan-500/10 text-cyan-200">
+            <Coins className="h-3.5 w-3.5" />
+            {xlmBalance} XLM
+          </span>
+        )}
         <span className="badge border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
           <Wallet className="h-3.5 w-3.5" />
           {shortAddress(wallet.publicKey)}
@@ -148,6 +156,13 @@ export default function WalletSummary({
             label="Bağlı cüzdan"
             value={shortAddress(wallet.publicKey)}
           />
+          {xlmBalance !== null && (
+            <DetailRow
+              icon={<Coins className="h-4 w-4 text-cyan-300" />}
+              label="Bakiye"
+              value={`${xlmBalance} XLM`}
+            />
+          )}
           <DetailRow
             icon={<Globe2 className="h-4 w-4 text-cyan-300" />}
             label="Ağ"
