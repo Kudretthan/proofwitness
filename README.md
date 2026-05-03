@@ -45,6 +45,24 @@ https://stellar.expert/explorer/testnet/tx/95faf73b257c943ccc8547f69b0c189b86d0a
 Native XLM Token Contract:
 CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 
+## Screenshots
+
+### Dashboard
+
+![ProofWitness dashboard showing connected Freighter wallet, XLM balance, claim stats, and system status.](./docs/screenshots/dashboard.png)
+
+### Claim Creation
+
+![ProofWitness claim creation flow with Soroban escrow stake notice and crisis claim form.](./docs/screenshots/create-claim.png)
+
+### Verified Claim
+
+![ProofWitness verified claim detail showing AI risk analysis, XLM stake, payout transaction, and verification result.](./docs/screenshots/verified-claim.png)
+
+### Reputation
+
+![ProofWitness reputation page showing wallet credits, badge, and leaderboard.](./docs/screenshots/reputation.png)
+
 ## Deployment Architecture
 
 - **Frontend** is deployed on Vercel.
