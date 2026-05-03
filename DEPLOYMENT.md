@@ -1,4 +1,4 @@
-# ProofWitness — Deployment Guide
+# ProofWitness - Deployment Guide
 
 ## 1. Backend Deploy (Render / Railway)
 
@@ -22,7 +22,7 @@
 1. Create a new project on [Supabase](https://supabase.com).
 2. Go to the SQL Editor.
 3. Copy the contents of `supabase/schema.sql` and run it to create tables (`claims`, `verifications`, `credit_ledger`).
-4. Hackathon MVP için RLS kapalı / açık erişim kullanılıyor. Production’da RLS policies gerekir.
+4. RLS is disabled / open access is used for the hackathon MVP. Production requires proper RLS policies.
 5. Get your `Project URL` and `anon / public key` from Settings -> API.
 
 ## 3. Frontend Deploy (Vercel)
@@ -60,7 +60,7 @@
 - **Vercel env changes**:
   Redeploy required after env changes.
 - **Freighter txBadAuth**:
-  Payout must be started by claim creator wallet.
+  Payout must be started by the claim creator wallet.
 - **Render cold start**:
   Backend may take 30-60 seconds on free tier.
 - **Treasury Demo showing in soroban mode**:

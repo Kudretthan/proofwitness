@@ -34,6 +34,24 @@ Admin address:
 GBQRMRIH4UCY3YKHCJAHJZII4SFQ66XBBHKKQ7PV6Z6UKJN4F7VOV2C7
 ```
 
+Contract explorer:
+
+```text
+https://stellar.expert/explorer/testnet/contract/CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
+```
+
+Deployment transaction:
+
+```text
+https://stellar.expert/explorer/testnet/tx/173a9b167f4e6b5a341877609a1c08517b53a382c634df221bf70a33da0734c4
+```
+
+Initialization transaction:
+
+```text
+https://stellar.expert/explorer/testnet/tx/95faf73b257c943ccc8547f69b0c189b86d0aa87c12a7203dcc8989e37437aa8
+```
+
 Network:
 
 ```text
@@ -143,7 +161,7 @@ In Soroban mode (`VITE_STAKE_MODE=soroban`), ProofWitness uses smart contract lo
 - Verifiers stake 0.1 Testnet XLM.
 - Stakes are locked by the Soroban contract.
 - Claim and verification references are recorded through hashes and IDs.
-- Soroban claim başarılı olursa stake contract mantığıyla kilitlenir. Soroban başarısız olursa claim/verification oluşturulmamalıdır.
+- If the Soroban claim transaction succeeds, the stake is locked by the contract. If the Soroban transaction fails, the claim or verification should not be created.
 - When a claim resolves, winning contributors can receive stake back.
 - False or inaccurate contributors may lose their stake depending on the final result.
 
@@ -151,16 +169,16 @@ The frontend still uses Freighter for user signatures. The app does not request 
 
 ## Soroban Payout / Stake Refund
 
-- Claim sonuçlandıktan sonra stake refund hazır hale gelir.
-- 3 true verification => claim verified.
-- 2 false verification => claim disputed.
-- Payout işlemini claim creator wallet başlatır.
-- Freighter popup ile payout transaction imzalanır.
-- Soroban escrow kazanan taraftaki cüzdanlara stake iadelerini dağıtır.
-- Yanlış tarafta kalanların stake’i geri verilmez.
-- Eğer farklı bir cüzdan payout başlatmaya çalışırsa işlem yetkisiz olur.
-- UI artık payout butonunu yalnızca claim creator wallet bağlıyken aktif gösterir.
-- Payout başarılı olursa payout transaction hash gösterilir.
+- Stake refund becomes available after the claim is resolved.
+- 3 true verifications -> claim verified.
+- 2 false verifications -> claim disputed.
+- The claim creator wallet starts the payout transaction.
+- Freighter signs the payout transaction.
+- Soroban escrow returns stake to wallets on the winning side.
+- Stake from the losing side is not returned.
+- If a different wallet tries to start payout, the transaction is rejected as unauthorized.
+- The UI only enables the payout button when the connected wallet is the claim creator.
+- If payout succeeds, the payout transaction hash is shown.
 
 ## Example Contract Flow
 

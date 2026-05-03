@@ -33,6 +33,15 @@ https://github.com/Kudretthan/proofwitness
 Soroban Contract:
 CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
 
+Soroban Contract Explorer:
+https://stellar.expert/explorer/testnet/contract/CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
+
+Deployment Transaction:
+https://stellar.expert/explorer/testnet/tx/173a9b167f4e6b5a341877609a1c08517b53a382c634df221bf70a33da0734c4
+
+Initialization Transaction:
+https://stellar.expert/explorer/testnet/tx/95faf73b257c943ccc8547f69b0c189b86d0aa87c12a7203dcc8989e37437aa8
+
 Native XLM Token Contract:
 CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 
@@ -47,14 +56,18 @@ CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 
 ```text
 User Browser
-↓
+  |
+  v
 Vercel Frontend
-↓
-Render Backend → Gemini API
-↓
+  |
+  v
+Render Backend -> Gemini API
+  |
+  v
 Supabase Database
-↓
-Freighter Wallet → Stellar Testnet / Soroban Escrow
+  |
+  v
+Freighter Wallet -> Stellar Testnet / Soroban Escrow
 ```
 
 ## Production URLs
@@ -65,6 +78,9 @@ Freighter Wallet → Stellar Testnet / Soroban Escrow
 | Backend Health | https://proofwitness.onrender.com/api/health |
 | GitHub Repository | https://github.com/Kudretthan/proofwitness |
 | Soroban Contract | CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G |
+| Soroban Contract Explorer | https://stellar.expert/explorer/testnet/contract/CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G |
+| Deployment Transaction | https://stellar.expert/explorer/testnet/tx/173a9b167f4e6b5a341877609a1c08517b53a382c634df221bf70a33da0734c4 |
+| Initialization Transaction | https://stellar.expert/explorer/testnet/tx/95faf73b257c943ccc8547f69b0c189b86d0aa87c12a7203dcc8989e37437aa8 |
 | Native XLM Token Contract | CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC |
 
 ## Key Features
@@ -91,9 +107,9 @@ Freighter Wallet → Stellar Testnet / Soroban Escrow
 7. Other users verify or dispute with notes and optional evidence.
 8. Each verification requires XLM stake.
 9. Community result changes status:
-   - 3 true verifications => Verified
-   - 2 false verifications => False / Disputed
-   - otherwise => Needs Evidence
+   - 3 true verifications -> Verified
+   - 2 false verifications -> False / Disputed
+   - otherwise -> Needs Evidence
 10. Reputation credits are assigned to accurate contributors.
 11. Soroban escrow handles stake locking and payout logic.
 
@@ -131,22 +147,40 @@ Admin:
 GBQRMRIH4UCY3YKHCJAHJZII4SFQ66XBBHKKQ7PV6Z6UKJN4F7VOV2C7
 ```
 
-In Soroban mode (`VITE_STAKE_MODE=soroban`), XLM stake is locked by smart contract logic. Soroban claim başarılı olursa stake contract mantığıyla kilitlenir. Soroban başarısız olursa claim/verification oluşturulmamalıdır. Treasury fallback demo karmaşasını azaltmak için soroban modunda fallback kapatıldı. Treasury fallback sadece treasury mode için açıklanmıştır, ana demo akışı olarak kullanılmaz.
+Contract Explorer:
+
+```text
+https://stellar.expert/explorer/testnet/contract/CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
+```
+
+Deployment Transaction:
+
+```text
+https://stellar.expert/explorer/testnet/tx/173a9b167f4e6b5a341877609a1c08517b53a382c634df221bf70a33da0734c4
+```
+
+Initialization Transaction:
+
+```text
+https://stellar.expert/explorer/testnet/tx/95faf73b257c943ccc8547f69b0c189b86d0aa87c12a7203dcc8989e37437aa8
+```
+
+In Soroban mode (`VITE_STAKE_MODE=soroban`), XLM stake is locked by smart contract logic. If the Soroban claim transaction succeeds, the stake is locked by the contract. If the Soroban transaction fails, the claim or verification should not be created. Treasury fallback is disabled in Soroban mode to keep the demo flow clear. Treasury fallback is only documented for treasury mode and is not used as the main demo flow.
 
 See [SOROBAN.md](./SOROBAN.md) for contract commands, environment variables, and current limitations.
 
 ## Soroban Payout / Stake Refund
 
-- Claim sonuçlandıktan sonra stake refund hazır hale gelir.
-- 3 true verification => claim verified.
-- 2 false verification => claim disputed.
-- Payout işlemini claim creator wallet başlatır.
-- Freighter popup ile payout transaction imzalanır.
-- Soroban escrow kazanan taraftaki cüzdanlara stake iadelerini dağıtır.
-- Yanlış tarafta kalanların stake’i geri verilmez.
-- Eğer farklı bir cüzdan payout başlatmaya çalışırsa işlem yetkisiz olur.
-- UI artık payout butonunu yalnızca claim creator wallet bağlıyken aktif gösterir.
-- Payout başarılı olursa payout transaction hash gösterilir.
+- Stake refund becomes available after the claim is resolved.
+- 3 true verifications -> claim verified.
+- 2 false verifications -> claim disputed.
+- The claim creator wallet starts the payout transaction.
+- Freighter signs the payout transaction.
+- Soroban escrow returns stake to wallets on the winning side.
+- Stake from the losing side is not returned.
+- If a different wallet tries to start payout, the transaction is rejected as unauthorized.
+- The UI only enables the payout button when the connected wallet is the claim creator.
+- If payout succeeds, the payout transaction hash is shown.
 
 ## Reputation Credits
 
@@ -204,7 +238,7 @@ proofwitness/
 
 ## Environment Variables
 
-### Frontend / Vercel:
+### Frontend / Vercel
 
 ```env
 VITE_API_BASE_URL=https://proofwitness.onrender.com
@@ -217,12 +251,12 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
 ```
 
-> **Önemli Not:**
+> **Important Note:**
 > - `VITE_SUPABASE_URL` must be exactly `https://xxxxx.supabase.co`. Do not include `/rest/v1`.
 > - `VITE_SUPABASE_ANON_KEY` should be the publishable/anon key, not the secret key.
 > - Do not commit `.env` files.
 
-### Backend / Render:
+### Backend / Render
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key
@@ -231,15 +265,15 @@ FRONTEND_URL=https://proofwitness.vercel.app
 
 ## Supabase Shared Data Layer
 
-- İlk MVP `localStorage` kullanıyordu.
-- Son versiyonda Supabase eklendi.
-- Farklı kullanıcılar aynı claim ve verification kayıtlarını görebiliyor.
+- The first MVP used `localStorage`.
+- The current version adds Supabase.
+- Different users can see the same claim and verification records.
 - **Tables:**
   - `claims`
   - `verifications`
   - `credit_ledger`
-- Hackathon MVP için RLS kapalı / açık erişim kullanılıyor.
-- Production’da RLS policies gerekir.
+- RLS is disabled / open access is used for the hackathon MVP.
+- Production requires proper RLS policies.
 
 ## Deployment Steps
 
@@ -263,10 +297,10 @@ FRONTEND_URL=https://proofwitness.vercel.app
 4. Build Command: `npm run build`
 5. Output Directory: `dist`
 6. Add `VITE_` environment variables.
-7. Vercel SPA routing notu:
-   - React/Vite routes like `/system` need Vercel rewrite.
+7. Add the Vercel SPA routing rewrite:
+   - React/Vite routes like `/system` need Vercel rewrite support.
    - `frontend/vercel.json` should route all paths to `index.html`.
-   - This prevents 404 on direct route refresh.
+   - This prevents 404 errors on direct route refresh.
 8. Deploy.
 
 ### Supabase
@@ -282,18 +316,19 @@ FRONTEND_URL=https://proofwitness.vercel.app
 ## Deployment Troubleshooting
 
 Common errors:
+
 - **Supabase 404 / Invalid path**:
-  VITE_SUPABASE_URL should not include `/rest/v1`.
+  `VITE_SUPABASE_URL` should not include `/rest/v1`.
 - **Supabase No API key**:
-  VITE_SUPABASE_ANON_KEY missing or wrong env name.
+  `VITE_SUPABASE_ANON_KEY` is missing or has the wrong environment variable name.
 - **Vercel env changes**:
-  Redeploy required after env changes.
+  Redeploy required after environment variable changes.
 - **Freighter txBadAuth**:
-  Payout must be started by claim creator wallet.
+  Payout must be started by the claim creator wallet.
 - **Render cold start**:
-  Backend may take 30-60 seconds on free tier.
-- **Treasury Demo showing in soroban mode**:
-  Check VITE_STAKE_MODE=soroban and redeploy.
+  Backend may take 30-60 seconds on the free tier.
+- **Treasury demo showing in Soroban mode**:
+  Check `VITE_STAKE_MODE=soroban` and redeploy.
 
 ## Test Commands
 
@@ -342,16 +377,17 @@ stellar contract build
 6. Add three true verifications from wallets.
 7. Claim moves to Verified.
 8. Connect claim creator wallet.
-9. Click "Stake İadelerini Dağıt".
+9. Click "Distribute Stake Refunds".
 10. Approve Freighter payout transaction.
 11. Show payout transaction hash.
 12. Show reputation and system pages.
 
 **Important Demo Details:**
+
 - Render free instance may sleep and take 30-60 seconds for the first backend request.
 - Freighter must be set to Testnet.
 - Use different Freighter accounts to demonstrate community verification.
-- If live demo fails, the project can still be demonstrated locally while Soroban contract remains live on Stellar Testnet.
+- If live demo fails, the project can still be demonstrated locally while the Soroban contract remains live on Stellar Testnet.
 
 ## Current MVP Limitations
 
