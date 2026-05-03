@@ -127,6 +127,7 @@ export async function fetchAllData() {
         rewardsDistributed: dbc.rewards_distributed,
         verifications: claimVerifs,
         escrowPayoutDone: !!dbc.payout_tx_hash,
+        payoutTxHash: dbc.payout_tx_hash || undefined,
       };
     });
 
@@ -159,7 +160,7 @@ export async function insertClaim(claim: Claim) {
       stake_tx_hash: claim.stakeTxHash || "",
       reward_credits: claim.rewardCredits || 0,
       rewards_distributed: !!claim.rewardsDistributed,
-      payout_tx_hash: claim.escrowPayoutDone ? "done" : null, // Fallback since frontend uses a boolean
+      payout_tx_hash: claim.payoutTxHash || (claim.escrowPayoutDone ? "done" : null),
       soroban_synced: false,
       soroban_tx_hash: null,
     };
@@ -206,7 +207,7 @@ export async function updateClaimStatus(claim: Claim) {
         status: claim.status,
         reward_credits: claim.rewardCredits || 0,
         rewards_distributed: claim.rewardsDistributed || false,
-        payout_tx_hash: claim.escrowPayoutDone ? "done" : null
+        payout_tx_hash: claim.payoutTxHash || (claim.escrowPayoutDone ? "done" : null)
       })
       .eq("id", claim.id);
     if (error) throw error;

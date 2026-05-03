@@ -48,6 +48,7 @@ export type Claim = {
   rewardsDistributed?: boolean;
   stakeMode?: "treasury" | "soroban";
   escrowPayoutDone?: boolean;
+  payoutTxHash?: string;
 };
 
 export type CreditLedger = Record<string, number>;

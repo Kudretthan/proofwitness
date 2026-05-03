@@ -34,7 +34,7 @@ type Props = {
   walletConnected: boolean;
   creditLedger: CreditLedger;
   onVerificationAdded: (claimId: string, verification: Verification) => void;
-  onPayoutDone?: (claimId: string) => void;
+  onPayoutDone?: (claimId: string, payoutTxHash: string) => void;
   mode?: "full" | "compact";
 };
 
@@ -89,6 +89,11 @@ function normalizeClaimStakeMode(stakeMode: Claim["stakeMode"] | string | undefi
   if (stakeMode === "soroban") return "soroban";
   if (stakeMode === "treasury" || stakeMode === "Treasury Demo") return "treasury";
   return undefined;
+}
+
+function isTxBadAuthError(message: string) {
+  const normalized = message.toLowerCase().replace(/[\s_-]/g, "");
+  return normalized.includes("txbadauth") || normalized.includes("badauth");
 }
 
 function ExplorerLink({ hash, label }: { hash: string; label?: string }) {
@@ -148,8 +153,15 @@ export default function ClaimCard({
   const creatorBadge = getBadge(claim.creatorWallet, creditLedger);
   const isResolved = claim.status === "Verified" || claim.status === "False / Disputed";
   const claimUsedSoroban = effectiveClaimStakeMode === "soroban";
-  const canShowPayoutButton =
-    stakeMode === "soroban" && claimUsedSoroban && isResolved && !claim.escrowPayoutDone && isSorobanReady();
+  const canShowPayoutPanel = stakeMode === "soroban" && claimUsedSoroban && isResolved && !claim.escrowPayoutDone;
+  const creatorWalletConnected =
+    walletConnected && walletAddress.toLowerCase() === claim.creatorWallet.toLowerCase();
+  const payoutDisabled = payoutLoading || !walletConnected || !creatorWalletConnected || !isSorobanReady();
+  const payoutHelperText = !walletConnected
+    ? "Stake iadesi için Freighter cüzdanınızı bağlayın."
+    : !creatorWalletConnected
+      ? "Bu işlem için bildirimi oluşturan cüzdanla bağlanın."
+      : "Bu işlem Freighter ile imzalanır. Soroban escrow, kazanan taraftaki cüzdanlara stake iadelerini dağıtır.";
   const isFutureDate = (() => {
     if (!claim.incidentDate) return false;
     const today = new Date();
@@ -160,7 +172,12 @@ export default function ClaimCard({
 
   const handlePayout = async () => {
     if (!walletConnected) {
-      setPayoutError("Payout için Freighter cüzdanınızı bağlayın.");
+      setPayoutError("Stake iadesi için Freighter cüzdanınızı bağlayın.");
+      return;
+    }
+
+    if (!creatorWalletConnected) {
+      setPayoutError("Bu işlem için bildirimi oluşturan cüzdanla bağlanın.");
       return;
     }
 
@@ -175,10 +192,14 @@ export default function ClaimCard({
       }
 
       setPayoutSuccess(true);
-      onPayoutDone?.(claim.id);
+      onPayoutDone?.(claim.id, result.txHash);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Stake iadesi çalıştırılamadı.";
-      setPayoutError(msg);
+      setPayoutError(
+        isTxBadAuthError(msg)
+          ? "Yetkisiz imza. Stake iadesini başlatmak için bildirimi oluşturan cüzdanla bağlanın."
+          : msg
+      );
     } finally {
       setPayoutLoading(false);
     }
@@ -390,16 +411,20 @@ export default function ClaimCard({
           <p className="mt-3 text-sm text-slate-300">{witnessMessage(claim.status)}</p>
         </div>
 
-        {canShowPayoutButton && (
+        {canShowPayoutPanel && (
           <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="text-sm font-bold text-violet-100">Stake iadesi hazır</h4>
                 <p className="mt-1 text-xs text-violet-200/75">
-                  Soroban escrow, sonuca göre kazanan tarafların stake iadesini yönetir.
+                  Stake iadelerini bildirimi oluşturan cüzdan başlatabilir.
                 </p>
               </div>
-              <button onClick={handlePayout} disabled={payoutLoading} className="btn-primary shrink-0">
+              <button
+                onClick={handlePayout}
+                disabled={payoutDisabled}
+                className="btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 {payoutLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -408,11 +433,14 @@ export default function ClaimCard({
                 ) : (
                   <>
                     <Lock className="h-4 w-4" />
-                    Stake iadesini çalıştır
+                    Stake İadelerini Dağıt
                   </>
                 )}
               </button>
             </div>
+            <p className={`mt-3 text-xs ${payoutDisabled ? "text-amber-100" : "text-violet-200/75"}`}>
+              {payoutHelperText}
+            </p>
             {payoutError && (
               <p className="mt-3 rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm text-red-100">
                 {payoutError}
@@ -420,7 +448,7 @@ export default function ClaimCard({
             )}
             {payoutSuccess && (
               <p className="mt-3 rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                Stake iadesi tamamlandı.
+                Stake iadeleri dağıtıldı.
               </p>
             )}
           </div>
@@ -428,7 +456,12 @@ export default function ClaimCard({
 
         {claim.escrowPayoutDone && (
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            Stake iadesi tamamlandı.
+            <p className="font-semibold">Stake iadeleri dağıtıldı.</p>
+            {claim.payoutTxHash && (
+              <p className="mt-2 font-mono text-xs">
+                Payout TX: <ExplorerLink hash={claim.payoutTxHash} />
+              </p>
+            )}
           </div>
         )}
 

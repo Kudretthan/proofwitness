@@ -9,7 +9,7 @@ type Props = {
   walletConnected: boolean;
   creditLedger: CreditLedger;
   onVerificationAdded: (claimId: string, verification: Verification) => void;
-  onPayoutDone?: (claimId: string) => void;
+  onPayoutDone?: (claimId: string, payoutTxHash: string) => void;
 };
 
 type BoardTab = "active" | "verified" | "disputed";

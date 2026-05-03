@@ -238,11 +238,11 @@ export default function App() {
     setCreditLedger({});
   }, []);
 
-  const handlePayoutDone = useCallback((claimId: string) => {
+  const handlePayoutDone = useCallback((claimId: string, payoutTxHash: string) => {
     setClaims((prev) =>
       prev.map((claim) => {
         if (claim.id === claimId) {
-          const updated = { ...claim, escrowPayoutDone: true };
+          const updated = { ...claim, escrowPayoutDone: true, payoutTxHash };
           if (isSupabaseConfigured) {
             updateClaimStatus(updated);
           }
