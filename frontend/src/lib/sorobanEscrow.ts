@@ -58,6 +58,80 @@ export function getSorobanConfigError(): string | null {
 
 // ─── Soroban RPC Client ───
 
+/**
+ * Check if the contract is already initialized by calling a read-only function.
+ * We call contract_balance which requires init. If it panics, contract is not initialized.
+ */
+export async function checkContractInitialized(): Promise<boolean> {
+  if (!ESCROW_CONTRACT_ID || !XLM_TOKEN_ID) return false;
+  const server = new StellarSdk.rpc.Server(SOROBAN_RPC_URL);
+  const contract = new StellarSdk.Contract(ESCROW_CONTRACT_ID);
+
+  // Use a dummy account for simulation (won't submit)
+  try {
+    const dummyAccount = await server.getAccount(ESCROW_CONTRACT_ID).catch(() => null);
+    if (!dummyAccount) {
+      // Try simulation with a placeholder — if contract panics with "not initialized"
+      // we know it needs init. If it panics with something else, it might be initialized.
+      return false;
+    }
+
+    const tx = new StellarSdk.TransactionBuilder(dummyAccount, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(contract.call("contract_balance"))
+      .setTimeout(30)
+      .build();
+
+    const simResult = await server.simulateTransaction(tx);
+    if (StellarSdk.rpc.Api.isSimulationError(simResult)) {
+      const errMsg = (simResult as StellarSdk.rpc.Api.SimulateTransactionErrorResponse).error || "";
+      if (errMsg.includes("not initialized") || errMsg.includes("contract not initialized")) {
+        return false;
+      }
+      // Other error = probably initialized but something else is wrong
+      return true;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Initialize the escrow contract. Must be called by the admin wallet once after deploy.
+ */
+export async function sorobanInitContract(
+  adminPublicKey: string
+): Promise<{ success: boolean; txHash: string; error?: string }> {
+  try {
+    const cId = ESCROW_CONTRACT_ID;
+    if (!cId) throw new Error("VITE_SOROBAN_ESCROW_CONTRACT_ID tanımlı değil.");
+    if (!XLM_TOKEN_ID) throw new Error("VITE_XLM_TOKEN_CONTRACT_ID tanımlı değil.");
+
+    const args: StellarSdk.xdr.ScVal[] = [
+      new StellarSdk.Address(adminPublicKey).toScVal(),
+      new StellarSdk.Address(XLM_TOKEN_ID).toScVal(),
+    ];
+
+    const response = await invokeContract(adminPublicKey, cId, "init", args);
+    return {
+      success: response.status === "SUCCESS",
+      txHash:
+        response.status === "SUCCESS"
+          ? (response as StellarSdk.rpc.Api.GetSuccessfulTransactionResponse).txHash || ""
+          : "",
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("sorobanInitContract failed:", err);
+    return { success: false, txHash: "", error: msg };
+  }
+}
+
+
+
 function getRpcServer(): StellarSdk.rpc.Server {
   return new StellarSdk.rpc.Server(SOROBAN_RPC_URL);
 }

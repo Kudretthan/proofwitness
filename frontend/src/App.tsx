@@ -374,6 +374,8 @@ export default function App() {
               sorobanConfigErr={sorobanConfigErr}
               onClearData={handleClearData}
               supabaseError={supabaseError}
+              walletAddress={walletAddress}
+              walletConnected={walletConnected}
             />
           }
         />
