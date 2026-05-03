@@ -117,13 +117,14 @@ stellar contract invoke \
 Frontend `.env`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:4000
-VITE_STAKE_TREASURY_ADDRESS=GAKCKLXUOMY4CA7444ALGWFHTCH4LOGIMNLBLERCO4YA2ARJE7STQPW4
+VITE_API_BASE_URL=https://proofwitness.onrender.com
 VITE_STAKE_MODE=soroban
 VITE_SOROBAN_ESCROW_CONTRACT_ID=CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
 VITE_XLM_TOKEN_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 VITE_STELLAR_NETWORK=testnet
 VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
 ```
 
 Backend `.env`:
@@ -131,21 +132,35 @@ Backend `.env`:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 PORT=4000
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=https://proofwitness.vercel.app
 ```
 
 ## What Escrow Does
 
-In Soroban mode, ProofWitness uses smart contract logic for stake locking:
+In Soroban mode (`VITE_STAKE_MODE=soroban`), ProofWitness uses smart contract logic for stake locking:
 
 - Claim creators stake 0.5 Testnet XLM.
 - Verifiers stake 0.1 Testnet XLM.
 - Stakes are locked by the Soroban contract.
 - Claim and verification references are recorded through hashes and IDs.
+- Soroban claim başarılı olursa stake contract mantığıyla kilitlenir. Soroban başarısız olursa claim/verification oluşturulmamalıdır.
 - When a claim resolves, winning contributors can receive stake back.
 - False or inaccurate contributors may lose their stake depending on the final result.
 
 The frontend still uses Freighter for user signatures. The app does not request or store private keys.
+
+## Soroban Payout / Stake Refund
+
+- Claim sonuçlandıktan sonra stake refund hazır hale gelir.
+- 3 true verification => claim verified.
+- 2 false verification => claim disputed.
+- Payout işlemini claim creator wallet başlatır.
+- Freighter popup ile payout transaction imzalanır.
+- Soroban escrow kazanan taraftaki cüzdanlara stake iadelerini dağıtır.
+- Yanlış tarafta kalanların stake’i geri verilmez.
+- Eğer farklı bir cüzdan payout başlatmaya çalışırsa işlem yetkisiz olur.
+- UI artık payout butonunu yalnızca claim creator wallet bağlıyken aktif gösterir.
+- Payout başarılı olursa payout transaction hash gösterilir.
 
 ## Example Contract Flow
 
@@ -220,6 +235,8 @@ stellar contract invoke \
 
 ## Treasury Fallback Mode
 
+> **Note:** Treasury fallback is only explained here for the treasury mode architecture. It is not the main demo flow anymore to reduce complexity. The primary mode is Soroban mode.
+
 ProofWitness also keeps a treasury fallback mode for demos and environments where Soroban is not enabled.
 
 ```env
@@ -231,12 +248,13 @@ In treasury mode, Freighter signs a normal Testnet XLM payment to the configured
 
 ## Current Limitations
 
-- This is a hackathon MVP contract flow.
+- Hackathon MVP.
 - The escrow contract is deployed on Testnet only.
+- Testnet XLM has no real monetary value.
+- Contract needs audit before production.
 - Production use requires deeper contract security review.
 - The MVP focuses on stake locking and basic payout behavior.
 - Lost stake is not yet fully redistributed as a reward pool.
-- Reputation credits are still local/demo state.
 - Evidence files are stored by the backend, not by the contract.
 - The contract stores references and hashes, not full claim or image data.
 

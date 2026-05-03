@@ -30,7 +30,7 @@ https://proofwitness.onrender.com/api/health
 GitHub:
 https://github.com/Kudretthan/proofwitness
 
-Soroban Escrow Contract:
+Soroban Contract:
 CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
 
 Native XLM Token Contract:
@@ -64,7 +64,7 @@ Freighter Wallet → Stellar Testnet / Soroban Escrow
 | Frontend | https://proofwitness.vercel.app |
 | Backend Health | https://proofwitness.onrender.com/api/health |
 | GitHub Repository | https://github.com/Kudretthan/proofwitness |
-| Soroban Escrow Contract | CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G |
+| Soroban Contract | CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G |
 | Native XLM Token Contract | CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC |
 
 ## Key Features
@@ -77,8 +77,8 @@ Freighter Wallet → Stellar Testnet / Soroban Escrow
 - Claim and verification hashes
 - Evidence photo upload
 - Reputation credits and badges
-- Local persistence for demo
-- Treasury fallback mode
+- Supabase shared data layer
+- Soroban payout and stake refund
 
 ## How It Works
 
@@ -95,13 +95,11 @@ Freighter Wallet → Stellar Testnet / Soroban Escrow
    - 2 false verifications => False / Disputed
    - otherwise => Needs Evidence
 10. Reputation credits are assigned to accurate contributors.
-11. Soroban escrow can handle stake locking and payout logic.
+11. Soroban escrow handles stake locking and payout logic.
 
 ## Important AI Note
 
-AI confidence is not the probability that the event is true.
-
-In ProofWitness, AI confidence means how confident the AI is in its risk analysis. The AI helps triage suspicious or risky claims, but it does not determine truth. Truth is determined by human evidence and community verification.
+AI is not a truth judge. It performs risk analysis. The truth is determined by community evidence and verification results. "AI confidence" is not the probability that the event is true; it is how confident the AI is in its risk analysis. The AI helps triage suspicious or risky claims, but it does not determine truth.
 
 ## XLM Staking
 
@@ -133,9 +131,22 @@ Admin:
 GBQRMRIH4UCY3YKHCJAHJZII4SFQ66XBBHKKQ7PV6Z6UKJN4F7VOV2C7
 ```
 
-In Soroban mode, XLM stake is locked by smart contract logic. When a claim is resolved, winning contributors can receive stake back. False or inaccurate contributors may lose their stake depending on the result.
+In Soroban mode (`VITE_STAKE_MODE=soroban`), XLM stake is locked by smart contract logic. Soroban claim başarılı olursa stake contract mantığıyla kilitlenir. Soroban başarısız olursa claim/verification oluşturulmamalıdır. Treasury fallback demo karmaşasını azaltmak için soroban modunda fallback kapatıldı. Treasury fallback sadece treasury mode için açıklanmıştır, ana demo akışı olarak kullanılmaz.
 
 See [SOROBAN.md](./SOROBAN.md) for contract commands, environment variables, and current limitations.
+
+## Soroban Payout / Stake Refund
+
+- Claim sonuçlandıktan sonra stake refund hazır hale gelir.
+- 3 true verification => claim verified.
+- 2 false verification => claim disputed.
+- Payout işlemini claim creator wallet başlatır.
+- Freighter popup ile payout transaction imzalanır.
+- Soroban escrow kazanan taraftaki cüzdanlara stake iadelerini dağıtır.
+- Yanlış tarafta kalanların stake’i geri verilmez.
+- Eğer farklı bir cüzdan payout başlatmaya çalışırsa işlem yetkisiz olur.
+- UI artık payout butonunu yalnızca claim creator wallet bağlıyken aktif gösterir.
+- Payout başarılı olursa payout transaction hash gösterilir.
 
 ## Reputation Credits
 
@@ -197,7 +208,6 @@ proofwitness/
 
 ```env
 VITE_API_BASE_URL=https://proofwitness.onrender.com
-VITE_STAKE_TREASURY_ADDRESS=GAKCKLXUOMY4CA7444ALGWFHTCH4LOGIMNLBLERCO4YA2ARJE7STQPW4
 VITE_STAKE_MODE=soroban
 VITE_SOROBAN_ESCROW_CONTRACT_ID=CCNWALULXOTPOFUIXXYC7BIDNPSJGHVUDYTPGXZZ6LRPED7ULOYSO56G
 VITE_XLM_TOKEN_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
@@ -207,6 +217,11 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
 ```
 
+> **Önemli Not:**
+> - `VITE_SUPABASE_URL` must be exactly `https://xxxxx.supabase.co`. Do not include `/rest/v1`.
+> - `VITE_SUPABASE_ANON_KEY` should be the publishable/anon key, not the secret key.
+> - Do not commit `.env` files.
+
 ### Backend / Render:
 
 ```env
@@ -214,23 +229,17 @@ GEMINI_API_KEY=your_gemini_api_key
 FRONTEND_URL=https://proofwitness.vercel.app
 ```
 
-> **Önemli Not:**
-> - Do not commit real `.env` files.
-> - Do not expose `GEMINI_API_KEY`.
-> - Supabase anon/publishable key is intended for browser usage in this MVP.
-> - Production should use RLS policies and stricter access control.
-
 ## Supabase Shared Data Layer
 
-Originally, the MVP used `localStorage`. That meant each browser had its own claim list.
-Supabase was added so multiple users can see the same claims and verifications in the deployed app.
-
-**Tables:**
-- `claims`
-- `verifications`
-- `credit_ledger`
-
-*Note: For hackathon speed, RLS is disabled / unrestricted. For production, RLS policies should be added.*
+- İlk MVP `localStorage` kullanıyordu.
+- Son versiyonda Supabase eklendi.
+- Farklı kullanıcılar aynı claim ve verification kayıtlarını görebiliyor.
+- **Tables:**
+  - `claims`
+  - `verifications`
+  - `credit_ledger`
+- Hackathon MVP için RLS kapalı / açık erişim kullanılıyor.
+- Production’da RLS policies gerekir.
 
 ## Deployment Steps
 
@@ -254,8 +263,11 @@ Supabase was added so multiple users can see the same claims and verifications i
 4. Build Command: `npm run build`
 5. Output Directory: `dist`
 6. Add `VITE_` environment variables.
-7. Deploy.
-8. If using React Router, Vercel SPA rewrite is required if implemented.
+7. Vercel SPA routing notu:
+   - React/Vite routes like `/system` need Vercel rewrite.
+   - `frontend/vercel.json` should route all paths to `index.html`.
+   - This prevents 404 on direct route refresh.
+8. Deploy.
 
 ### Supabase
 
@@ -266,6 +278,22 @@ Supabase was added so multiple users can see the same claims and verifications i
    - `credit_ledger`
 3. Add Project URL and publishable/anon key to Vercel.
 4. Redeploy frontend.
+
+## Deployment Troubleshooting
+
+Common errors:
+- **Supabase 404 / Invalid path**:
+  VITE_SUPABASE_URL should not include `/rest/v1`.
+- **Supabase No API key**:
+  VITE_SUPABASE_ANON_KEY missing or wrong env name.
+- **Vercel env changes**:
+  Redeploy required after env changes.
+- **Freighter txBadAuth**:
+  Payout must be started by claim creator wallet.
+- **Render cold start**:
+  Backend may take 30-60 seconds on free tier.
+- **Treasury Demo showing in soroban mode**:
+  Check VITE_STAKE_MODE=soroban and redeploy.
 
 ## Test Commands
 
@@ -304,18 +332,20 @@ cd contracts/proofwitness_escrow
 stellar contract build
 ```
 
-## Demo Notes
+## Demo Flow
 
-1. Open the app.
+1. Open live site.
 2. Connect Freighter on Testnet.
-3. Create a crisis claim.
-4. Approve XLM stake transaction.
-5. AI risk analysis appears.
-6. Add verification with note and optional evidence.
-7. Approve verification stake transaction.
-8. Add enough verifications to resolve the claim.
-9. Run payout / observe reputation credits.
-10. Show transaction hashes and Soroban contract details.
+3. Create a claim.
+4. Approve Soroban/XLM stake transaction.
+5. Show AI risk analysis.
+6. Add three true verifications from wallets.
+7. Claim moves to Verified.
+8. Connect claim creator wallet.
+9. Click "Stake İadelerini Dağıt".
+10. Approve Freighter payout transaction.
+11. Show payout transaction hash.
+12. Show reputation and system pages.
 
 **Important Demo Details:**
 - Render free instance may sleep and take 30-60 seconds for the first backend request.
@@ -325,13 +355,13 @@ stellar contract build
 
 ## Current MVP Limitations
 
-- Evidence uploads use Render/backend local storage and are not permanent.
-- Supabase is used as shared app database; production needs RLS.
-- AI does not determine truth, only risk and verification need.
-- Soroban escrow is on Testnet.
-- Testnet XLM has no real monetary value.
-- Image AI verification is future work.
-- Official disaster data integrations are future work.
+- Hackathon MVP.
+- Stellar Testnet only.
+- Testnet XLM has no real value.
+- Supabase is used for shared state; production needs RLS.
+- Evidence upload storage needs permanent storage like IPFS/Filebase/Cloudinary.
+- Contract needs audit before production.
+- Official data/oracle integrations are future work.
 
 ## Future Work
 
