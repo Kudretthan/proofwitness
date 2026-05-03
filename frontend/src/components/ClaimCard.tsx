@@ -85,6 +85,12 @@ function witnessMessage(status: ClaimStatus) {
   return "Bu bildirimi doğrulamak için bölgedeki kişilerden fotoğraf, açıklama veya bağlantı ile kanıt bekleniyor.";
 }
 
+function normalizeClaimStakeMode(stakeMode: Claim["stakeMode"] | string | undefined) {
+  if (stakeMode === "soroban") return "soroban";
+  if (stakeMode === "treasury" || stakeMode === "Treasury Demo") return "treasury";
+  return undefined;
+}
+
 function ExplorerLink({ hash, label }: { hash: string; label?: string }) {
   return (
     <a
@@ -132,6 +138,8 @@ export default function ClaimCard({
   const [payoutSuccess, setPayoutSuccess] = useState(false);
 
   const stakeMode = getStakeMode();
+  const claimStakeMode = normalizeClaimStakeMode(claim.stakeMode);
+  const effectiveClaimStakeMode = claimStakeMode || stakeMode;
   const trueCount = claim.verifications.filter((v) => v.decision === "true").length;
   const falseCount = claim.verifications.filter((v) => v.decision === "false").length;
   const unsureCount = claim.verifications.filter((v) => v.decision === "unsure").length;
@@ -139,7 +147,7 @@ export default function ClaimCard({
     claim.rewardCredits + claim.verifications.reduce((sum, verification) => sum + verification.rewardCredits, 0);
   const creatorBadge = getBadge(claim.creatorWallet, creditLedger);
   const isResolved = claim.status === "Verified" || claim.status === "False / Disputed";
-  const claimUsedSoroban = claim.stakeMode === "soroban";
+  const claimUsedSoroban = effectiveClaimStakeMode === "soroban";
   const canShowPayoutButton =
     stakeMode === "soroban" && claimUsedSoroban && isResolved && !claim.escrowPayoutDone && isSorobanReady();
   const isFutureDate = (() => {
@@ -312,7 +320,7 @@ export default function ClaimCard({
               <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/35 p-3">
                 <span className="text-slate-500">Stake modu</span>
                 <span className="font-bold text-slate-100">
-                  {claim.stakeMode === "soroban" ? "Soroban Escrow" : "Treasury Demo"}
+                  {effectiveClaimStakeMode === "soroban" ? "Soroban Escrow" : "Treasury Demo"}
                 </span>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-950/35 p-3">
@@ -324,7 +332,7 @@ export default function ClaimCard({
               <div className="rounded-xl border border-slate-800 bg-slate-950/35 p-3">
                 <p className="text-slate-500">Soroban durum bilgisi</p>
                 <p className="mt-1 text-sm font-semibold text-slate-100">
-                  {claim.stakeMode === "soroban"
+                  {effectiveClaimStakeMode === "soroban"
                     ? claim.escrowPayoutDone
                       ? "Stake iadesi tamamlandı."
                       : isResolved
@@ -426,7 +434,7 @@ export default function ClaimCard({
 
         {mode === "full" ? (
           <>
-            <VerificationList verifications={claim.verifications} creditLedger={creditLedger} stakeMode={claim.stakeMode} />
+            <VerificationList verifications={claim.verifications} creditLedger={creditLedger} stakeMode={effectiveClaimStakeMode} />
 
             <VerificationForm
               claimId={claim.id}
@@ -442,7 +450,7 @@ export default function ClaimCard({
               Doğrulama Detaylarını Göster
             </summary>
             <div className="mt-4 space-y-5">
-              <VerificationList verifications={claim.verifications} creditLedger={creditLedger} stakeMode={claim.stakeMode} />
+              <VerificationList verifications={claim.verifications} creditLedger={creditLedger} stakeMode={effectiveClaimStakeMode} />
             </div>
           </details>
         )}

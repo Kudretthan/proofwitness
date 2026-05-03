@@ -132,8 +132,7 @@ export default function ClaimForm({ walletAddress, walletConnected, onClaimCreat
           stakeTxHash = result.txHash;
         } catch (err: unknown) {
           console.error("Soroban escrow failed:", err);
-          // Soroban modunda treasury fallback YOKTUR. İşlemi durdur.
-          throw new Error("Soroban escrow işlemi başarısız oldu. Treasury fallback devre dışı.");
+          throw new Error("Soroban escrow işlemi başarısız oldu. Bildirim oluşturulmadı.");
         }
       } else if (stakeMode === "treasury") {
         const treasury = getTreasuryAddress();

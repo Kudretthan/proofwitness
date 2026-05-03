@@ -190,10 +190,12 @@ export default function WalletSummary({
               : "tanımlı değil"}
           </span>
         </p>
-        <p>
-          Treasury fallback:{" "}
-          <span className="font-mono text-slate-200">{treasury ? shortAddress(treasury) : "tanımlı değil"}</span>
-        </p>
+        {stakeMode === "treasury" && (
+          <p>
+            Treasury fallback:{" "}
+            <span className="font-mono text-slate-200">{treasury ? shortAddress(treasury) : "tanımlı değil"}</span>
+          </p>
+        )}
         <div className="flex items-center justify-between gap-3 pt-2">
           <span className="inline-flex items-center gap-1.5 text-slate-500">
             <Database className="h-3.5 w-3.5" />

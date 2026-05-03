@@ -102,13 +102,15 @@ export default function SystemPage({
               {hasRpcUrl ? "Evet" : "Hayır"}
             </span>
           </div>
-          <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-slate-400">Treasury Fallback Address</span>
-            <span className="font-mono text-xs font-bold text-slate-100">{import.meta.env.VITE_STAKE_TREASURY_ADDRESS || "Belirtilmemiş"}</span>
-          </div>
+          {stakeMode === "treasury" && (
+            <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-slate-400">Treasury Fallback Address</span>
+              <span className="font-mono text-xs font-bold text-slate-100">{import.meta.env.VITE_STAKE_TREASURY_ADDRESS || "Belirtilmemiş"}</span>
+            </div>
+          )}
           <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-slate-400">Backend API URL</span>
-            <span className="font-mono text-xs font-bold text-slate-100">{import.meta.env.VITE_API_URL || "Belirtilmemiş"}</span>
+            <span className="font-mono text-xs font-bold text-slate-100">{import.meta.env.VITE_API_BASE_URL || "Belirtilmemiş"}</span>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import ClaimForm from "../components/ClaimForm";
 import SystemNotice from "../components/SystemNotice";
+import { getStakeMode } from "../lib/sorobanEscrow";
 import { useNavigate } from "react-router-dom";
 import type { Claim } from "../types";
 
@@ -11,6 +12,7 @@ type Props = {
 
 export default function CreateClaimPage({ walletAddress, walletConnected, onClaimCreated }: Props) {
   const navigate = useNavigate();
+  const stakeMode = getStakeMode();
 
   const handleCreated = (claim: Claim) => {
     onClaimCreated(claim);
@@ -26,7 +28,9 @@ export default function CreateClaimPage({ walletAddress, walletConnected, onClai
 
       <div className="space-y-4">
         <SystemNotice title="0.5 Testnet XLM Stake Gerektirir">
-          Bildirimi oluştururken cüzdanınızdan 0.5 XLM stake imzası istenir. Bu stake Soroban escrow sözleşmesinde veya treasury adresinde tutulur.
+          {stakeMode === "soroban"
+            ? "Bildirimi oluştururken cüzdanınızdan 0.5 XLM stake imzası istenir. Bu stake Soroban escrow sözleşmesinde kilitlenir."
+            : "Bildirimi oluştururken cüzdanınızdan 0.5 XLM stake imzası istenir. Bu stake treasury demo adresinde tutulur."}
         </SystemNotice>
         <SystemNotice title="Otomatik AI Analizi" tone="violet">
           Bildiriminiz gönderildiğinde anında AI (Gemini) risk analizinden geçer ve sisteme kaydedilir.
